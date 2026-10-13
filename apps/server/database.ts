@@ -21,6 +21,12 @@ class Database {
     });
   }
 
+  // Guarda el jugador sin command ni online: son del mensaje y de la conexión, no del jugador
+  savePlayer(player: { id: number }): void {
+    const data = Object.fromEntries(Object.entries(player).filter(([key]) => key != "command" && key != "online"));
+    this.update({ id: player.id }, data as Partial<UserDoc>);
+  }
+
   update(condition: Filter<UserDoc>, data: Partial<UserDoc>): void {
     database
       .collection<UserDoc>("users")

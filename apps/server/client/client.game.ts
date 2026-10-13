@@ -313,7 +313,7 @@ class GameClient {
   //### database modifiers ###
 
   updatePlayerData(): void {
-    this.db.update({ id: this.player.id }, this.player);
+    this.db.savePlayer(this.player);
   }
 }
 

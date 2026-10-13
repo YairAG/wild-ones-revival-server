@@ -57,6 +57,10 @@ function suite(transport: Transport) {
     const r = await caro.request({ command: "buy_accessory", type: "Gorro" });
     assert.equal(last(r).gold, 930);
     assert.deepEqual(last(r).userAccessories, ["Gorro"]);
+    // Se guarda el jugador, pero no command ni online (son del mensaje y de la conexión)
+    const doc = await env.waitForUser("Caro", (u) => u.gold === 930);
+    assert.equal(doc.command, undefined);
+    assert.equal(doc.online, undefined);
 
     const r2 = await caro.request({ command: "set_acc_load", load: ["Gorro"] });
     assert.deepEqual(last(r2).ownedPets["1"].accessories, ["Gorro"]);
