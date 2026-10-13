@@ -11,6 +11,9 @@ Frontend ◀──────────(JWT)───────────
 Frontend ──(WebSocket: logIn {token})──▶ Servidor de juego ──▶ verifica el JWT y lee el usuario en Mongo
 ```
 
+El JWT es el **token de acceso**. La sesión larga (refresh token en una cookie httpOnly) es solo entre el frontend
+y el backend de cuentas: este servidor no la ve.
+
 El backend y el servidor de juego comparten **la misma base de MongoDB** (`MONGO_URL`) y **el mismo secreto**
 (`JWT_SECRET`). No se hablan entre sí directamente.
 
@@ -21,11 +24,11 @@ El backend y el servidor de juego comparten **la misma base de MongoDB** (`MONGO
 | Algoritmo | **HS256** (cualquier otro, incluido `none`, se rechaza) |
 | Secreto | `JWT_SECRET`, el mismo en los dos `.env` |
 | `sub` | El `id` numérico del usuario, como texto: `"142603"` |
-| `exp` | Recomendado y corto (p. ej. 10 minutos): el token solo se usa al hacer `logIn` |
+| `exp` | Corto (en wildones-accounts, 15 minutos). El frontend pide uno nuevo antes de cada `logIn` o reconexión |
 
 ```js
 // Backend (Node, jsonwebtoken)
-const token = jwt.sign({}, process.env.JWT_SECRET, { subject: String(user.id), expiresIn: "10m" });
+const token = jwt.sign({}, process.env.JWT_SECRET, { subject: String(user.id), expiresIn: "15m" });
 ```
 
 El frontend lo manda al servidor de juego en el primer mensaje del lobby:
