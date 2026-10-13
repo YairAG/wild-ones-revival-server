@@ -29,7 +29,7 @@ cada uno se corrige después en su propio commit.
 
 ## Errores que lanzan excepción (atrapada, el comando no hace nada)
 
-- `handler/shop.ts` `handleSetWeaponsEquipped`: usa `invalidItemLog` sin `this.` → `ReferenceError`.
+- ~~`handler/shop.ts` `handleSetWeaponsEquipped`: usaba `invalidItemLog` sin `this.` → `ReferenceError`~~ (arreglado).
 - ~~`helpers/logger.ts` usaba `fs` sin importarlo~~ (archivo eliminado al pasar a pino).
 - `wol/matchmaking.ts` `findSlot` con nombre propio: usa `tmpId` sin definir si el nombre ya existe.
 - `logIn` en una conexión `game` llama a `sendPlayerSetup`, que `GameClient` no tiene.

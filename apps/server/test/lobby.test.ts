@@ -2,7 +2,7 @@
 // Fijan el comportamiento de HOY, bugs incluidos (marcados con "bug:"). Ver docs/TESTS.md.
 import { describe, test, before, after } from "node:test";
 import assert = require("node:assert/strict");
-import { startTestServer, user, sleep, TRANSPORTS, type TestEnv } from "./helpers/server";
+import { startTestServer, user, TRANSPORTS, type TestEnv } from "./helpers/server";
 import type { Message, TestClient, Transport } from "./helpers/client";
 
 function suite(transport: Transport) {
@@ -98,12 +98,9 @@ function suite(transport: Transport) {
     const r = await caro.request({ command: "set_weapons_equipped", value: ["walk", "grenade", "goo"] });
     assert.deepEqual(last(r).userWeaponsEquipped, ["walk", "grenade", "goo"]);
 
-    // bug: con un arma que no tiene lanza ReferenceError (invalidItemLog); no responde nada.
-    // Se envía solo (sin request): una excepción descarta el resto del paquete TCP, ping incluido.
-    caro.messages.length = 0;
-    caro.send({ command: "set_weapons_equipped", value: ["nuke"] });
-    await sleep(300);
-    assert.deepEqual(caro.messages, []);
+    // Con un arma que no tiene no cambia nada (antes además lanzaba ReferenceError y se perdía el resto del
+    // paquete TCP; ahora el ping de request() sí llega)
+    assert.deepEqual(await caro.request({ command: "set_weapons_equipped", value: ["nuke"] }), []);
     assert.ok(env.logs().some((l) => l.msg === "set_weapons_equipped: arma que no tiene" && l.weapon === "nuke"));
   });
 

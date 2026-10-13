@@ -219,8 +219,6 @@ export function handleSetWeaponsEquipped(client: LobbyClient, data: Msg<"set_wea
 
     if (!client.player.userWeaponsOwned[data.value[i]]) {
       log.warn({ weapon: data.value[i] }, "set_weapons_equipped: arma que no tiene");
-      // @ts-expect-error bug: falta this., lanza ReferenceError (ver docs/BUGS.md)
-      invalidItemLog.write("Supposedly invalid item: " + data.value[i]);
       validSet = false;
       break;
     }
