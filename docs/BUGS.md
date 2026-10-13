@@ -65,7 +65,11 @@ cada uno se corrige después en su propio commit.
 - ~~`wins`, `losses` y `gamecount` nunca cambiaban~~ (arreglado): al terminar la partida todos suman una
   partida, gana el único vivo y pierden los muertos. Si se acaba el tiempo con varios vivos, esos empatan.
 - `sendTick` reenvía el último `synch_check` del jugador activo pero sobrescribe `tick` con el tick del servidor.
-  Posible causa del desync observado (sin verificar).
+  Probable causa del desync: el cliente es lockstep y quien no está en turno solo avanza hasta el `tick` del
+  último comando recibido (`TimeLoop.canTick`); `synch_check` no está en `ignoreCommandTick`, así que es su
+  reloj. Con el tick del servidor (que puede ir adelantado al del jugador), los demás simulan por delante y los
+  movimientos y disparos que llegan con un tick ya pasado se ejecutan tarde (`addCommand`: `commandTick <
+  currentTick` → se procesa en ese momento). Además se reenvía cada 50 ticks del servidor, no cuando llega.
 - `slot/index.ts` `update`: compara con `new Date().now` (siempre `undefined`), así que el aviso "haven't received
   tick" nunca se dispara.
 - `handlePlayerKill` y `handleRequestSynch` existen pero no están enrutados (y `handleRequestSynch` llama a
