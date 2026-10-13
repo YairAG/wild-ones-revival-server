@@ -45,6 +45,19 @@ function suite(transport: Transport) {
     await beto.next("set_tick"); // al que empieza turno
   });
 
+  test("la eliminación es de quien disparó, aunque el turno ya haya pasado (el tiro explota después)", async () => {
+    const [ana, beto] = await startGame();
+    ana.send({ command: "projectile", d: [10, 20], ammo_type: "mortar", crate: "false" });
+    await beto.next("projectile");
+    ana.send({ command: "turn_complete" });
+    await ana.next("changeTurn", 1000); // ahora es el turno de Beto
+
+    beto.send({ command: "player_died", id: 3 }); // lo reporta Beto (el que está en turno), pero el tiro fue de Ana
+    beto.send({ command: "player_died", id: 2 });
+    const stats = await ana.next("game_stats");
+    assert.equal(stats.kills, 2);
+  });
+
   test("reportar dos veces la misma muerte cuenta una sola vez", async () => {
     const [ana] = await startGame();
 

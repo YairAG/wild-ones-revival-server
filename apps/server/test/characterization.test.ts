@@ -265,7 +265,10 @@ function suite(transport: Transport) {
     });
 
     await t.test("cuando queda uno vivo termina la partida", async () => {
-      // Turno de Beto: le baja la vida a Ana de 1000 (la de su perro) a 650 → 350 de daño para Beto
+      // Turno de Beto: dispara y le baja la vida a Ana de 1000 (la de su perro) a 650 → 350 de daño para Beto.
+      // Goo de una caja: deja el tiempo por defecto tras disparar (el mortar de los datos de prueba acaba el turno en 100 ms)
+      gameB.send({ command: "projectile", d: [10, 20], ammo_type: "goo", crate: "true" });
+      await gameA.next("projectile");
       gameA.send({ command: "synch_pts", value: Utils.intToString(650) });
       await sleep(200);
       gameB.send({ command: "player_died", id: 2 }); // es el turno de Beto: solo cuenta lo que reporta él

@@ -174,6 +174,8 @@ export function handleProjectile(client: GameClient, data: Msg<"projectile">, wo
     log.warn({ id: client.player.id, weapon: data.ammo_type }, "projectile: arma que no tiene");
     return;
   }
+  client.getGame().lastShooter = client.player.id;
+  client.getGame().lastShotTick = client.getGame().tick;
 
   if (properties.timeAfter == null) {
     //harmful
@@ -218,7 +220,7 @@ export function handleRequestSynch(client: GameClient, data: { pid: number | str
 }
 
 // Cada cliente lo manda con su vida nueva al recibir daño (codificada, ver Utils.stringToInt). Lo que bajó se le
-// acredita a quien tiene el turno, si no es él mismo, para los premios de fin de partida. (El original lo
+// acredita a quien disparó por última vez (Slot.creditTo), si no es él mismo, para los premios de fin de partida. (El original lo
 // convertía en "adjust_pts", pero el envío está comentado.)
 export function handleSynchPts(client: GameClient, data: Msg<"synch_pts">): void {
   if (String(data.value).length != 16) return;
@@ -228,8 +230,8 @@ export function handleSynchPts(client: GameClient, data: Msg<"synch_pts">): void
   const hp = Math.max(0, Utils.stringToInt(data.value));
   const damage = mine.hp - hp;
   mine.hp = hp;
-  const attacker = game.stats[game.currentPlayer];
-  if (damage > 0 && attacker && game.currentPlayer != client.player.id) attacker.damage += damage;
+  const attacker = game.creditTo();
+  if (damage > 0 && attacker != null && attacker != client.player.id) game.stats[attacker].damage += damage;
 }
 
 export function handleLogProjectile(client: GameClient, data: Msg<"log_projectile">): void {

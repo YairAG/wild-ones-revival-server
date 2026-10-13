@@ -357,9 +357,10 @@ Se revisa cada 100 ms. Termina si quedan ≤ 1 conectados, ≤ 1 vivos o se acab
    último en morir antes).
 2. Premios (`helpers/rewards.ts`; puesto desde 0), a la mitad si la partida empezó con 2 jugadores:
    - por lugar: XP `9 × (6 − puesto)` y oro `12 × (6 − puesto)`;
-   - por eliminación: 15 de XP y 10 de oro. Una muerte cuenta para quien tiene el turno, si no es el muerto;
+   - por eliminación: 15 de XP y 10 de oro. Una muerte cuenta para quien disparó en los últimos 10 s (si no hubo
+     disparo, quien tiene el turno), si no es el muerto: un tiro alto puede explotar ya en el turno del otro;
    - por daño: 1 de XP y 1 de oro cada 100. El daño sale de `synch_pts`: lo que bajó la vida del que lo manda
-     (empieza con la de su mascota en Pets.dat) se le acredita a quien tiene el turno, si no es él mismo.
+     (empieza con la de su mascota en Pets.dat) se le acredita igual que las muertes, si no es él mismo.
 3. A cada uno, `game_stats` con lo suyo (`place` desde 1; los niveles desde 0, como los muestra el cliente):
 
 ```json

@@ -44,6 +44,10 @@ class Slot {
   declare session: string;
   declare deadPlayers: (number | string)[];
   declare stats: Record<string, PlayerGameStats>; // daño y eliminaciones de cada jugador, por id
+  // Quien disparó por última vez: el daño y las muertes son suyos aunque el turno ya haya pasado (un tiro alto
+  // puede explotar después de que el servidor cambió el turno)
+  declare lastShooter: number | string;
+  declare lastShotTick: number;
   declare weapon: WeaponManager;
   declare field: Field;
   declare commands: unknown[];
@@ -87,6 +91,8 @@ class Slot {
     this.session = "undefined";
     this.deadPlayers = [];
     this.stats = {};
+    this.lastShooter = -1;
+    this.lastShotTick = 0;
     this.initialCount = 0;
 
     this.weapon = new WeaponManager(this);
@@ -252,12 +258,20 @@ class Slot {
     if (this.clients[id] && !this.clients[id].isDead()) {
       this.clients[id].avatar.dead = true;
       this.deadPlayers.push(id);
-      // La eliminación cuenta para quien tiene el turno (si no se eliminó solo)
-      const killer = this.stats[this.currentPlayer];
-      if (killer && this.currentPlayer != id) killer.kills += 1;
+      // La eliminación cuenta para quien disparó por última vez (si no se eliminó solo)
+      const killer = this.creditTo();
+      if (killer != null && killer != id) this.stats[killer].kills += 1;
+      log.info({ gameId: this.gameId, id, killer, currentPlayer: this.currentPlayer }, "Jugador eliminado");
     } else {
       //its been removed from the clients array
     }
+  }
+
+  // A quién se le acredita el daño o una eliminación: quien disparó en los últimos 10 s (el tick avanza 1 cada
+  // 10 ms), o si no, quien tiene el turno
+  creditTo(): number | string | null {
+    if (this.stats[this.lastShooter] && this.tick - this.lastShotTick <= 1000) return this.lastShooter;
+    return this.stats[this.currentPlayer] ? this.currentPlayer : null;
   }
 
   setDefaultPositions(): void {
