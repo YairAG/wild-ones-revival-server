@@ -1,8 +1,9 @@
 // Recibe los datos de cada socket, separa los mensajes (6 dígitos de longitud + JSON), los valida y los
-// manda a la función de su comando. Los comandos están en auth, shop, rooms y game (ver docs/PROTOCOL.md).
+// manda a la función de su comando. Los comandos están en auth, shop, rooms, game y social (ver docs/PROTOCOL.md).
 import LobbyClient = require("../client/client.lobby.js");
 import LadderClient = require("../client/client.ladder.js");
 import GameClient = require("../client/client.game.js");
+import SocialClient = require("../client/client.social.js");
 import Protocol = require("wildones-protocol");
 import type Client = require("../client/client.abstract.js");
 import type WOL = require("../wol");
@@ -10,12 +11,17 @@ import * as auth from "./auth";
 import * as shop from "./shop";
 import * as rooms from "./rooms";
 import * as game from "./game";
+import * as social from "./social";
 import log = require("../helpers/log.js");
 
-type AnyClient = Client | LobbyClient | LadderClient | GameClient;
+type AnyClient = Client | LobbyClient | LadderClient | GameClient | SocialClient;
 
 // Valida un mensaje entrante contra su esquema; los inválidos se loguean y se descartan
-type Schema = typeof Protocol.lobbyMessage | typeof Protocol.ladderMessage | typeof Protocol.gameMessage;
+type Schema =
+  | typeof Protocol.lobbyMessage
+  | typeof Protocol.ladderMessage
+  | typeof Protocol.gameMessage
+  | typeof Protocol.socialMessage;
 
 function isValid(schema: Schema, packet: unknown): boolean {
   const result = schema.safeParse(packet);
@@ -96,6 +102,10 @@ class Handler {
         stateObject = new LadderClient(client as Client);
         (client as Client).fireChangeEvent();
         stateObject.WOL.addClient(stateObject);
+      } else if (connectionType == "social") {
+        stateObject = new SocialClient(client as Client);
+        (client as Client).fireChangeEvent();
+        stateObject.WOL.addClient(stateObject);
       }
 
       data = data.substr(data.indexOf("\r\n\r\n"));
@@ -155,6 +165,8 @@ class Handler {
       this.handleLadderCommand(stateObject as LadderClient, JSON.parse(content.substr(0, len)));
     } else if (stateObject.connectionType == "game") {
       this.handleGameCommand(stateObject as GameClient, JSON.parse(content.substr(0, len)));
+    } else if (stateObject.connectionType == "social") {
+      this.handleSocialCommand(stateObject as SocialClient, JSON.parse(content.substr(0, len)));
     }
 
     if (content.length > len) {
@@ -230,6 +242,24 @@ class Handler {
         break;
       case "join_game":
         rooms.handleJoinGame(client, packet, wol);
+        break;
+    }
+  }
+
+  handleSocialCommand(client: SocialClient, packet: Protocol.SocialMessage): void {
+    if (!isValid(Protocol.socialMessage, packet)) return;
+    switch (packet.command) {
+      case "logIn":
+        social.handleSocialLogin(client, packet);
+        break;
+      case "ping":
+        handlePing(client);
+        break;
+      case "invite":
+        social.handleInvite(client, packet, this.WOL);
+        break;
+      case "invite_answer":
+        social.handleInviteAnswer(client, packet, this.WOL);
         break;
     }
   }

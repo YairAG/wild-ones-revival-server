@@ -48,6 +48,18 @@ class Database {
       });
   }
 
+  // ¿Son amigos? Lee la colección "friendships" del backend de cuentas (una por pareja: pair = "menor-mayor")
+  areFriends(a: number, b: number, callback: (friends: boolean) => void): void {
+    const pair = a < b ? `${a}-${b}` : `${b}-${a}`;
+    database
+      .collection("friendships")
+      .countDocuments({ pair, status: "accepted" })
+      .then(
+        (n) => callback(n > 0),
+        () => callback(false),
+      );
+  }
+
   fetch(condition: Filter<UserDoc>, callback: (doc: UserDoc | null) => void): void {
     database
       .collection<UserDoc>("users")

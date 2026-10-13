@@ -72,6 +72,12 @@ los valida al crear el usuario.
   el jugador nunca se ha conectado: tratarlo como `"offline"`. No confundir con `status`, que es la marca de
   "listo" de la sala que usa el cliente original.
 
+### Amistades (colección `friendships`)
+
+Las escribe solo el backend de cuentas. El servidor de juego solo las **lee** para las invitaciones a partida
+(conexión social, ver PROTOCOL.md): dos jugadores son amigos si existe
+`{ pair: "<id menor>-<id mayor>", status: "accepted" }`.
+
 ### Lo que el servidor nunca lee
 
 Contraseñas, emails, fechas de registro, etc. Recomendación: guárdalos en **otra colección** (p. ej.

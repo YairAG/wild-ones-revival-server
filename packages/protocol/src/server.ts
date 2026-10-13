@@ -108,6 +108,21 @@ export interface GameStats {
   killsXp: number;
 }
 
+/** Un jugador en un mensaje de invitación */
+export interface PlayerRef {
+  id: number;
+  dname: string;
+}
+
+/** Mensajes de la conexión social (frontend web): invitaciones a partida */
+export type SocialServerMessage =
+  | { command: "social_ready" } // login correcto
+  | { command: "invite"; from: PlayerRef } // te invitaron
+  | { command: "invite_sent"; to: PlayerRef } // tu invitación llegó
+  | { command: "invite_accepted"; by: PlayerRef } // aceptaron tu invitación: los dos van a la sala
+  | { command: "invite_declined"; by: PlayerRef }
+  | { command: "invite_error"; error: string }; // mensaje para mostrar
+
 export type ServerMessage =
   | Player
   | GameState
@@ -116,11 +131,15 @@ export type ServerMessage =
   | GameStats
   | { command: "ping_ack" }
   | { command: "game_name_return"; name: string; value: 0 | 1 }
-  | { command: "chance_wheel_return"; value: { reward: Record<string, number> | null; special?: "true" | "false" } }
+  | {
+      command: "chance_wheel_return";
+      value: { reward: Record<string, number> | null; special?: "true" | "false" };
+    }
   | { command: "medal_init" | "xpromo_fetched" | "news" | "idlegift" | "game_join_confirmed" }
   | { command: "synch_check"; id: "oppenheimer"; tick: number; [key: string]: unknown }
   | { command: "set_tick"; id: -1; value: number; turnEndTick: number; tick: 0 }
   | { command: "set_synch"; id: "oppenheimer"; [key: string]: unknown }
+  | SocialServerMessage
   // Acciones del jugador en turno, reenviadas tal cual a los demás
   | Extract<GameMessage, { command: RelayedCommand }>;
 

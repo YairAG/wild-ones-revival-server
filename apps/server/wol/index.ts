@@ -10,6 +10,7 @@ import { listenTcp, listenWs, type Connection } from "./transport";
 import type LobbyClient = require("../client/client.lobby.js");
 import type LadderClient = require("../client/client.ladder.js");
 import type GameClient = require("../client/client.game.js");
+import type SocialClient = require("../client/client.social.js");
 import type AccessoriesProperties = require("../properties/accessories.properties.js");
 import type WeaponProperties = require("../properties/weapon.properties.js");
 import type MapProperties = require("../properties/map.properties.js");
@@ -19,11 +20,13 @@ import type { Player } from "wildones-protocol";
 import type { GameConfig, GameSocket } from "../types";
 import log = require("../helpers/log.js");
 
-type AnyClient = Client | LobbyClient | LadderClient | GameClient;
+type AnyClient = Client | LobbyClient | LadderClient | GameClient | SocialClient;
 
 class WOL {
   declare lobbyClients: Record<string, LobbyClient>;
   declare ladderClients: Record<string, LadderClient>;
+  declare socialClients: Record<string, SocialClient>;
+  declare invites: Record<number, { from: number; at: number }>; // invitación pendiente, por id del invitado
   declare slots: Record<string, Slot>;
   declare db: Database;
   declare packetHandler: PacketHandler;
@@ -47,6 +50,8 @@ class WOL {
     //initialize containers
     this.lobbyClients = {};
     this.ladderClients = {};
+    this.socialClients = {};
+    this.invites = {};
     this.slots = {};
 
     // setup database
@@ -185,9 +190,23 @@ class WOL {
   // Guarda en Mongo dónde está el jugador (ver Presence en types/user.ts): en una partida, solo en el lobby
   // o desconectado. Se llama cada vez que entra o sale de algún lado
   updatePresence(id: number): void {
-    const playing = Object.values(this.slots).some((slot) => slot.clients[id]);
-    const inLobby = Object.values(this.lobbyClients).some((client) => client.player?.id == id);
-    this.db.update({ id }, { presence: playing ? "playing" : inLobby ? "lobby" : "offline" });
+    const presence = this.isPlaying(id) ? "playing" : this.lobbyClientOf(id) ? "lobby" : "offline";
+    this.db.update({ id }, { presence });
+  }
+
+  // ¿Está dentro de alguna partida?
+  isPlaying(id: number): boolean {
+    return Object.values(this.slots).some((slot) => slot.clients[id]);
+  }
+
+  // Su conexión de lobby (el SWF), si la tiene abierta
+  lobbyClientOf(id: number): LobbyClient | undefined {
+    return Object.values(this.lobbyClients).find((client) => client.player?.id == id);
+  }
+
+  // Sus conexiones social (el frontend); puede tener varias pestañas abiertas
+  socialClientsOf(id: number): SocialClient[] {
+    return Object.values(this.socialClients).filter((client) => client.player?.id == id);
   }
 
   //### add / remove client ###
@@ -196,6 +215,7 @@ class WOL {
     log.debug({ id: obj.sock.id, type: obj.connectionType }, "Cliente registrado");
     if (obj.connectionType == "lobby") this.lobbyClients[obj.sock.id] = obj as LobbyClient;
     else if (obj.connectionType == "ladder") this.ladderClients[obj.sock.id] = obj as LadderClient;
+    else if (obj.connectionType == "social") this.socialClients[obj.sock.id] = obj as SocialClient;
   }
 
   removeClientObj(obj: AnyClient): void {
@@ -203,6 +223,7 @@ class WOL {
 
     if (obj.connectionType == "lobby") delete this.lobbyClients[obj.sock.id];
     else if (obj.connectionType == "ladder") delete this.ladderClients[obj.sock.id];
+    else if (obj.connectionType == "social") delete this.socialClients[obj.sock.id];
     else if (obj.connectionType == "game") {
       const game = obj as GameClient;
       if (game.gameId && this.slots[game.gameId]) {

@@ -4,8 +4,10 @@
 // Los tipos salen del código del servidor; no están verificados contra el cliente SWF original.
 import { z } from "zod";
 
-const msg = <C extends string, S extends z.ZodRawShape = Record<never, never>>(command: C, shape?: S) =>
-  z.looseObject({ command: z.literal(command), ...(shape ?? ({} as S)) });
+const msg = <C extends string, S extends z.ZodRawShape = Record<never, never>>(
+  command: C,
+  shape?: S,
+) => z.looseObject({ command: z.literal(command), ...(shape ?? ({} as S)) });
 
 const id = z.union([z.string(), z.number()]);
 const point = z.tuple([z.number(), z.number()]); // campo "d": [x, y]
@@ -64,7 +66,10 @@ export const gameMessage = z.discriminatedUnion("command", [
   msg("move_stop", { d: point }),
   msg("move_jump", { d: point, direction: z.string().optional() }),
   // El SWF original manda ángulo y potencia como texto ("0.80", "1001.37")
-  msg("set_aim", { value: z.union([z.number(), z.string()]), power: z.union([z.number(), z.string()]) }),
+  msg("set_aim", {
+    value: z.union([z.number(), z.string()]),
+    power: z.union([z.number(), z.string()]),
+  }),
   msg("start_fire", { d: point }),
   msg("cancel_fire"),
   msg("equip"),
@@ -90,7 +95,16 @@ export const gameMessage = z.discriminatedUnion("command", [
   msg("damage"),
 ]);
 
+// Conexión del frontend web (no del SWF): invitaciones a partida entre amigos
+export const socialMessage = z.discriminatedUnion("command", [
+  logIn,
+  ping,
+  msg("invite", { to: z.number().int() }), // invitar al amigo con ese id
+  msg("invite_answer", { from: z.number().int(), accept: z.boolean() }), // responder la invitación de `from`
+]);
+
 export type LobbyMessage = z.infer<typeof lobbyMessage>;
 export type LadderMessage = z.infer<typeof ladderMessage>;
 export type GameMessage = z.infer<typeof gameMessage>;
-export type ClientMessage = LobbyMessage | LadderMessage | GameMessage;
+export type SocialMessage = z.infer<typeof socialMessage>;
+export type ClientMessage = LobbyMessage | LadderMessage | GameMessage | SocialMessage;

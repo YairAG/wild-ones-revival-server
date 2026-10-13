@@ -12,7 +12,7 @@ import log = require("../helpers/log.js");
 type Msg<M, C> = Extract<M, { command: C }>;
 
 // Verifica el JWT de tu backend de cuentas (HS256 con JWT_SECRET). Devuelve el id del usuario (sub) o null
-function verifyToken(token: string): number | null {
+export function verifyToken(token: string): number | null {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     log.error("Falta JWT_SECRET: no se puede verificar ningún login");

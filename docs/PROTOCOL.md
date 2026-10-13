@@ -229,6 +229,20 @@ Notas:
 
 Nada más. No hay login ni datos de ranking en este servidor.
 
+### 4.1 Social (frontend web)
+
+No la usa el SWF: es la conexión del frontend (`POST /ballistic/social?x`), con el mismo formato de mensajes.
+Sirve para invitar amigos a una partida. Las amistades las guarda el backend de cuentas (colección
+`friendships`, ver [CUENTAS.md](CUENTAS.md)).
+
+| command | Dirección | Efecto |
+|---|---|---|
+| `logIn` `{token}` | C→S | Con un JWT válido responde `{"command":"social_ready"}`; si no, nada |
+| `ping` | C→S | `ping_ack` |
+| `invite` `{to}` | C→S | Invita al amigo con id `to`. Los dos tienen que estar en el lobby del juego y el invitado con el frontend abierto. Al invitado le llega `{"command":"invite","from":{id,dname}}` y a quien invita `invite_sent` `{to}` |
+| `invite_answer` `{from, accept}` | C→S | Responde la invitación de `from` (caduca en 1 minuto). Si rechaza, a quien invitó le llega `invite_declined` `{by}`. Si acepta, se crea una sala privada de 2 y a los dos SWF les llega `join` por su conexión de lobby (como en `quick_play`), y a quien invitó `invite_accepted` `{by}` |
+| `invite_error` `{error}` | S→C | Mensaje para mostrar: no son amigos, no está en el lobby, la invitación caducó… |
+
 ---
 
 ## 5. Partida (conexión game)
