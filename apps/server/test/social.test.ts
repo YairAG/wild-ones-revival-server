@@ -71,6 +71,29 @@ function suite(transport: Transport) {
     assert.notEqual(joinAna.session, joinBeto.session); // cada uno con su pase
     assert.deepEqual((await social.Ana.next("invite_accepted")).by, { id: 2, dname: "Beto" });
   });
+
+  test("si quien invita está esperando en su sala privada, el invitado entra a esa sala", async () => {
+    // Ana crea su sala desde el juego y entra
+    lobby.Ana.send({
+      command: "create_game",
+      gameName: "SalaDeAna",
+      mapName: "Sink or Swim",
+      playerCount: 4,
+      gameDuration: 4,
+      turnDuration: 15,
+    });
+    const join = await lobby.Ana.next("join");
+    const game = await env.connect(`/ballistic/game?gameId=${join.id}&session=${join.session}`);
+    game.send({ command: "start_server_connect", userId: "Ana" });
+    await game.next("player");
+
+    social.Ana.send({ command: "invite", to: 2 });
+    await social.Beto.next("invite");
+    social.Beto.send({ command: "invite_answer", from: 1, accept: true });
+
+    assert.equal((await lobby.Beto.next("join")).id, "SalaDeAna");
+    assert.deepEqual((await social.Ana.next("invite_accepted")).by, { id: 2, dname: "Beto" });
+  });
 }
 
 for (const transport of TRANSPORTS) describe(transport, () => suite(transport));

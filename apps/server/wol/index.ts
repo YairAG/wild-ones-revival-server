@@ -194,9 +194,14 @@ class WOL {
     this.db.update({ id }, { presence });
   }
 
-  // ¿Está dentro de alguna partida?
+  // La partida o sala en la que está (esperando o jugando), si está en alguna
+  slotOf(id: number): Slot | undefined {
+    return Object.values(this.slots).find((slot) => slot.clients[id]);
+  }
+
+  // ¿Está dentro de alguna partida o sala?
   isPlaying(id: number): boolean {
-    return Object.values(this.slots).some((slot) => slot.clients[id]);
+    return this.slotOf(id) !== undefined;
   }
 
   // Su conexión de lobby (el SWF), si la tiene abierta

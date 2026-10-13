@@ -1,10 +1,12 @@
 // Conexión social (frontend web): invitaciones a partida entre amigos.
-// 1. A invita a B (invite): tienen que ser amigos y estar los dos en el lobby del juego.
-// 2. B responde (invite_answer). Si acepta, se crea una sala privada y a los dos SWF les llega "join",
-//    como en partida rápida: el juego los lleva solo a la sala de espera.
+// 1. A invita a B (invite): tienen que ser amigos; B en el lobby del juego y A en el lobby o esperando en su
+//    sala privada.
+// 2. B responde (invite_answer). Si acepta y A está en su sala, B entra a esa sala; si no, se crea una sala
+//    privada para los dos. Al SWF le llega "join", como en partida rápida: el juego lo lleva solo a la sala.
 // Las invitaciones viven en memoria (wol.invites) y caducan en 1 minuto.
 import type SocialClient = require("../client/client.social.js");
 import type WOL = require("../wol");
+import type Slot = require("../slot");
 import type { SocialMessage, SocialServerMessage } from "wildones-protocol";
 import { verifyToken } from "./auth";
 import log = require("../helpers/log.js");
@@ -29,8 +31,9 @@ export function handleInvite(client: SocialClient, data: Msg<"invite">, wol: WOL
   const fail = (error: string) => client.sendPacket({ command: "invite_error", error });
 
   const friendLobby = wol.lobbyClientOf(data.to);
-  if (!wol.lobbyClientOf(me.id) || wol.isPlaying(me.id)) {
-    return fail("Entra al lobby del juego para invitar");
+  const myRoom = wol.slotOf(me.id);
+  if (!wol.lobbyClientOf(me.id) || (myRoom && !isWaitingRoom(myRoom))) {
+    return fail("Para invitar, entra al lobby o a tu sala privada");
   }
   if (!friendLobby || wol.isPlaying(data.to) || wol.socialClientsOf(data.to).length == 0) {
     return fail("Tu amigo no está en el lobby");
@@ -67,12 +70,22 @@ export function handleInviteAnswer(
 
   const hostLobby = wol.lobbyClientOf(data.from);
   const myLobby = wol.lobbyClientOf(me.id);
-  if (!hostLobby || !myLobby || wol.isPlaying(data.from) || wol.isPlaying(me.id)) {
-    return fail("Ya no están los dos en el lobby");
+  if (!hostLobby || !myLobby || wol.isPlaying(me.id)) return fail("Ya no estás en el lobby");
+
+  // Quien invitó está esperando en su sala privada: entras a esa
+  const hostRoom = wol.slotOf(data.from);
+  if (hostRoom) {
+    if (!isWaitingRoom(hostRoom)) return fail("La partida ya empezó");
+    if (hostRoom.getPlayerCount() >= hostRoom.playerCount) return fail("La sala está llena");
+    myLobby.gameId = hostRoom.gameId;
+    myLobby.sendJoinGame();
+    sendTo(wol, data.from, { command: "invite_accepted", by: me });
+    log.info({ gameId: hostRoom.gameId }, "Invitación aceptada: entra a la sala");
+    return;
   }
 
-  // Sala privada de 2 (las demás opciones, al azar entre las permitidas). El nombre solo lleva letras,
-  // números y guiones, como las salas creadas desde el juego
+  // Si no, sala privada de 2 para los dos (las demás opciones, al azar entre las permitidas). El nombre solo
+  // lleva letras, números y guiones, como las salas creadas desde el juego
   const details = wol.validateMapDetails(hostLobby, { playerCount: 2 });
   const gameId = wol.findSlot(hostLobby, details, `invitacion-${data.from}-${me.id}-${Date.now()}`);
   if (!gameId) return fail("No se pudo crear la sala");
@@ -83,6 +96,11 @@ export function handleInviteAnswer(
   }
   sendTo(wol, data.from, { command: "invite_accepted", by: me });
   log.info({ gameId }, "Invitación aceptada: sala creada");
+}
+
+// Sala privada que todavía no empieza (se puede invitar a ella)
+function isWaitingRoom(slot: Slot): boolean {
+  return slot.isPrivate && !slot.isRunning() && !slot.isGameOver();
 }
 
 // A todas las pestañas del frontend de ese jugador
