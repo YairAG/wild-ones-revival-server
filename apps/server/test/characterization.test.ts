@@ -199,14 +199,21 @@ function suite(transport: Transport) {
       await sleep(200);
       assert.ok(!gameA.messages.some((m) => m.command === "chat" && m.text === "otra"));
 
-      // synch_check del jugador en turno (Ana): se reenvía en cuanto llega y con SU tick (es el reloj de los
-      // demás). El de quien no está en turno se ignora
+      // Reloj de los que no están en turno (el cliente es lockstep). Mientras ningún jugador mandó synch_check
+      // (la cuenta regresiva), lo manda el servidor cada 500 ms con su tick
+      const serverClock = await gameB.next("synch_check", 1000);
+      assert.equal(serverClock.id, "oppenheimer");
+      // Desde el primero del jugador en turno (Ana), es el suyo: se reenvía en cuanto llega, con SU tick, y el
+      // del servidor ya no se manda. El de quien no está en turno se ignora
       gameA.send({ command: "synch_check", synchCheck: "abc", tick: 123 });
-      const check = await gameB.next("synch_check", 1000);
-      assert.deepEqual([check.synchCheck, check.tick], ["abc", 123]);
+      let check = await gameB.next("synch_check", 1000);
+      while (check.synchCheck !== "abc") check = await gameB.next("synch_check", 1000);
+      assert.equal(check.tick, 123);
+      gameB.messages.length = 0;
       gameB.send({ command: "synch_check", synchCheck: "xyz", tick: 124 });
-      await sleep(200);
+      await sleep(700);
       assert.ok(!gameA.messages.some((m) => m.command === "synch_check"));
+      assert.ok(!gameB.messages.some((m) => m.command === "synch_check"), "el reloj del servidor ya no se manda");
 
       // set_aim: solo del jugador en turno, reenviado a los demás
       gameA.send({ command: "set_aim", value: 1.2, power: 300 });

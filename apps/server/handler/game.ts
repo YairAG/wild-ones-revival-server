@@ -61,6 +61,7 @@ export function handleNotReady(client: GameClient): void {
 // esto es su reloj (antes se reenviaba cada 50 ticks del servidor con el tick del servidor; ver docs/BUGS.md)
 export function handleSynchCheck(client: GameClient, data: Msg<"synch_check">): void {
   if (client.getGame().currentPlayer != client.player.id) return;
+  client.getGame().playerClock = true; // desde ahora el reloj es el del jugador
   client.getGame().sendPacketE(data, client);
 }
 

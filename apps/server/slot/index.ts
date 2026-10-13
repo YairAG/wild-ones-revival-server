@@ -48,6 +48,9 @@ class Slot {
   // puede explotar después de que el servidor cambió el turno)
   declare lastShooter: number | string;
   declare lastShotTick: number;
+  // ¿Ya mandó algún jugador su synch_check? Hasta entonces (la cuenta regresiva: nadie tiene el turno en el
+  // cliente) el reloj de los demás lo da el servidor; después, el del jugador en turno (handleSynchCheck)
+  declare playerClock: boolean;
   declare weapon: WeaponManager;
   declare field: Field;
   declare commands: unknown[];
@@ -93,6 +96,7 @@ class Slot {
     this.stats = {};
     this.lastShooter = -1;
     this.lastShotTick = 0;
+    this.playerClock = false;
     this.initialCount = 0;
 
     this.weapon = new WeaponManager(this);
@@ -127,6 +131,7 @@ class Slot {
 
       if (this.tick % 50 == 0) {
         log.debug({ tick: this.tick }, "Tick");
+        if (!this.playerClock) this.sendServerClock();
       }
 
       //step avatar
@@ -451,6 +456,13 @@ class Slot {
       const c = this.clients[key];
       this.sendPlayerPosition(c);
     }
+  }
+
+  // synch_check con el tick del servidor para los que no tienen el turno: sin él, el cliente (lockstep) no avanza
+  // la cuenta regresiva del inicio. Solo hasta que llegue el primero de un jugador (ver playerClock)
+  sendServerClock(): void {
+    const cmd = { command: "synch_check", id: "oppenheimer", synchCheck: "", tick: this.tick };
+    this.sendPacketE(cmd, this.clients[this.currentPlayer]);
   }
 
   sendServerTick(): void {

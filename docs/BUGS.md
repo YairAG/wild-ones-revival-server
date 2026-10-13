@@ -72,7 +72,8 @@ cada uno se corrige después en su propio commit.
 - ~~`wins`, `losses` y `gamecount` nunca cambiaban~~ (arreglado): al terminar la partida todos suman una
   partida, gana el único vivo y pierden los muertos. Si se acaba el tiempo con varios vivos, esos empatan.
 - ~~`sendTick` reenviaba el último `synch_check` del jugador activo pero sobrescribía `tick` con el tick del
-  servidor~~ (arreglado: se reenvía en cuanto llega, con su tick; falta confirmarlo jugando). Probable causa del
+  servidor~~ (arreglado: se reenvía en cuanto llega, con su tick; el del servidor solo se manda hasta que llega el primero de
+  un jugador, porque en la cuenta regresiva nadie tiene el turno y sin él la partida no arranca). Probable causa del
   desync: el cliente es lockstep y quien no está en turno solo avanza hasta el `tick` del
   último comando recibido (`TimeLoop.canTick`); `synch_check` no está en `ignoreCommandTick`, así que es su
   reloj. Con el tick del servidor (que puede ir adelantado al del jugador), los demás simulan por delante y los

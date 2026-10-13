@@ -295,7 +295,9 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 - El reloj (`tick`) avanza **+10 cada 100 ms** → 1 unidad = 10 ms.
 - Duración de turno = `turnDuration` + 2 s el primero, + 1 s los siguientes.
 - El `synch_check` del jugador en turno se reenvía a los demás en cuanto llega, con su `tick` (el cliente es
-  lockstep: es el reloj de los que no están en turno; ver BUGS.md).
+  lockstep: es el reloj de los que no están en turno; ver BUGS.md). Mientras ningún jugador mandó el suyo (la
+  cuenta regresiva del inicio, cuando en el cliente nadie tiene el turno), cada 500 ms el servidor manda a los
+  demás uno propio: `{"command":"synch_check","id":"oppenheimer","synchCheck":"","tick":<tick del servidor>}`.
 - Al vencer el turno:
   1. Se calcula el fin del nuevo turno y el siguiente jugador pasa a ser `currentPlayer`.
   2. Al jugador **entrante**: `{"command":"set_tick","id":-1,"value":<tick>,"turnEndTick":<tick>,"tick":0}`.
