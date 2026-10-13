@@ -124,8 +124,8 @@ function suite(transport: Transport) {
     assert.equal(join.command, "join");
     assert.equal(join.id, "Sala-1"); // espacios → guiones
 
-    // bug: game_name_check no convierte espacios, así que "Sala 1" sigue apareciendo libre
-    assert.equal((await check("Sala 1"))[0].value, 1);
+    // game_name_check convierte los espacios igual que create_game: "Sala 1" ya está ocupada
+    assert.equal((await check("Sala 1"))[0].value, 0);
     assert.equal((await check("Sala-1"))[0].value, 0);
 
     // crear otra con el mismo nombre: avisa que está ocupado
@@ -133,11 +133,12 @@ function suite(transport: Transport) {
       { command: "game_name_return", name: "Sala-1", value: 0 },
     ]);
 
-    // bug: join_game mete en la partida a la conexión de lobby
+    // join_game solo da la llave (session); la conexión de lobby no entra a la partida
     const dani = await env.login("Dani");
     const [joinDani] = await dani.request({ command: "join_game", gameName: "Sala 1" });
     assert.equal(joinDani.id, "Sala-1");
-    assert.equal(joinDani.playerCount, 1);
+    assert.equal(joinDani.playerCount, 0);
+    assert.ok(joinDani.session);
 
     // sala inexistente: nada
     const eva = await env.login("Eva");

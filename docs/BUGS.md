@@ -34,7 +34,7 @@ cada uno se corrige después en su propio commit.
 - `wol/matchmaking.ts` `findSlot` con nombre propio: usa `tmpId` sin definir si el nombre ya existe.
 - `logIn` en una conexión `game` llama a `sendPlayerSetup`, que `GameClient` no tiene.
 - `give_medal` llama a `handleSendMedal`, que no existe.
-- `join_game` mete al cliente de **lobby** en la partida (`gameRef.addClient(client)`), aunque no tiene avatar.
+- ~~`join_game` metía al cliente de **lobby** en la partida (`gameRef.addClient(client)`), aunque no tiene avatar~~ (arreglado).
 
 ## Lógica
 
@@ -68,8 +68,8 @@ cada uno se corrige después en su propio commit.
   tick" nunca se dispara.
 - `handlePlayerKill` y `handleRequestSynch` existen pero no están enrutados (y `handleRequestSynch` llama a
   `getSynchCommand`, que no existe).
-- `game_name_check` no convierte espacios en guiones como `create_game`: "Sala 1" aparece libre aunque exista
-  "Sala-1". Fijado en los tests.
+- ~~`game_name_check` no convertía espacios en guiones como `create_game`~~ (arreglado): "Sala 1" aparecía libre
+  aunque existiera "Sala-1".
 - `delete_pet` deja `currentPet` como número (`1`) y `change_pet` como texto (`"2"`).
 - `weapons/mortar.ts`: construir un `Mortar` lanza `TypeError` (`Physical.apply` sobre una clase).
 

@@ -28,11 +28,11 @@ export function handleGameNameCheck(client: LobbyClient, data: Msg<"game_name_ch
     return;
   }
 
+  // Mismo nombre que usará create_game: espacios → guiones
   const cmd = {
     command: "game_name_return",
     name: data.name,
-    // bug: no convierte espacios en guiones como create_game (ver docs/BUGS.md)
-    value: wol.getGame(data.name) ? 0 : 1,
+    value: wol.getGame(data.name.split(" ").join("-")) ? 0 : 1,
   };
 
   client.sendPacket(cmd);
@@ -74,9 +74,8 @@ export function handleJoinGame(client: LobbyClient, data: Msg<"join_game">, wol:
   data.gameName = data.gameName.split(" ").join("-");
   const gameRef = wol.getGame(data.gameName);
   if (gameRef) {
+    // Solo se le da la llave: entra a la partida con su conexión game (handler/auth.ts)
     if (!gameRef.isRunning()) {
-      // @ts-expect-error bug: mete en la partida a la conexión de lobby (ver docs/BUGS.md)
-      gameRef.addClient(client);
       client.gameId = data.gameName;
       client.sendJoinGame();
     }
