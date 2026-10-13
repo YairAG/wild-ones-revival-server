@@ -26,7 +26,7 @@ function fakeClient(id: number) {
 }
 
 function runningGame(gameDuration: number) {
-  const wol = { updatePresence() {} }; // servidor simulado: solo lo que usa el fin de partida
+  const wol = { updatePresence() {}, syncLobbyPlayer() {} }; // servidor simulado: solo lo que usa el fin de partida
   const slot = new Slot(wol as never, "test_0", "Sink or Swim", 4, gameDuration, 10000);
   const clients = [1, 2, 3].map(fakeClient);
   for (const c of clients) slot.addClient(c as unknown as GameClient);

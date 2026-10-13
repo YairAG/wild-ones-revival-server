@@ -11,8 +11,14 @@ export interface Pet {
   pers?: string;
   color1?: string | number;
   color2?: string | number;
+  // Estadísticas de la mascota (su panel en el juego): se suman al terminar cada partida
   kills?: number;
   deaths?: number;
+  wins?: number;
+  losses?: number;
+  played?: number;
+  gold?: number; // oro ganado con ella
+  last?: number; // última partida (ms)
   accessories: string[];
 }
 

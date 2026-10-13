@@ -272,6 +272,23 @@ class Slot {
     }
   }
 
+  // Estadísticas de la mascota con la que jugó (las muestra su panel): partidas, victorias, derrotas, eliminaciones,
+  // muertes, oro ganado y la fecha de la última partida ("last", en ms)
+  addPetStats(client: GameClient, aliveCount: number, earned?: ReturnType<typeof rewards>): void {
+    const pet = client.player.ownedPets?.[client.player.currentPet];
+    if (!pet) return;
+    const add = (key: "played" | "losses" | "wins" | "deaths" | "kills" | "gold", n: number) =>
+      (pet[key] = (Number(pet[key]) || 0) + n);
+    const dead = client.isDead();
+    add("played", 1);
+    add("losses", dead ? 1 : 0);
+    add("wins", !dead && aliveCount == 1 ? 1 : 0);
+    add("deaths", dead ? 1 : 0);
+    add("kills", this.stats[client.player.id]?.kills ?? 0);
+    add("gold", earned ? earned.placeGold + earned.killsGold + earned.damageGold : 0);
+    pet.last = Date.now();
+  }
+
   // A quién se le acredita el daño o una eliminación: quien disparó en los últimos 10 s (el tick avanza 1 cada
   // 10 ms), o si no, quien tiene el turno
   creditTo(): number | string | null {
@@ -334,6 +351,7 @@ class Slot {
   }
 
   removeClient(client: GameClient): void {
+    this.WOL.syncLobbyPlayer(client.player); // lo que ganó mientras jugó (XP por disparo, munición)
     //change status from dead to disconnected
     const deadPlayerIndex = this.deadPlayers.indexOf(client.player.id);
     if (deadPlayerIndex >= 0) {
@@ -507,7 +525,9 @@ class Slot {
       client.player.gamecount += 1;
       if (client.isDead()) client.player.losses += 1;
       else if (alive.length == 1) client.player.wins += 1;
+      this.addPetStats(client, alive.length, earned[client.player.id]);
       client.updatePlayerData();
+      this.WOL.syncLobbyPlayer(client.player);
     }
 
     for (const key in this.clients) {

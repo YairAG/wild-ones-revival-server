@@ -297,6 +297,19 @@ function suite(transport: Transport) {
       await waitForUser("Ana", (d) => d.wins == 1 && d.losses == 0 && d.gamecount == 1);
       await waitForUser("Beto", (d) => d.wins == 0 && d.losses == 1 && d.gamecount == 1);
 
+      // Estadísticas de la mascota con la que jugó cada uno (su panel en el juego)
+      const ana = await waitForUser("Ana", (d) => d.ownedPets["1"].played == 1);
+      assert.equal(ana.ownedPets["1"].wins, 1);
+      assert.equal(ana.ownedPets["1"].gold, statsA.placeGold + statsA.killsGold + statsA.damageGold);
+      assert.ok(ana.ownedPets["1"].last > 0);
+      const beto = await waitForUser("Beto", (d) => d.ownedPets["1"].played == 1);
+      assert.deepEqual([beto.ownedPets["1"].losses, beto.ownedPets["1"].deaths], [1, 1]);
+
+      // El lobby de Ana ya tiene lo de la partida: lo que guarde desde ahí no lo pisa
+      const [afterGame] = await lobbyA.request({ command: "change_pet", name: "1" });
+      assert.equal(afterGame.wins, 1);
+      assert.equal(afterGame.ownedPets["1"].wins, 1);
+
       // Presencia: al terminar vuelven al lobby (siguen con esa conexión abierta); al cerrarla, desconectados
       await waitForUser("Ana", (u) => u.presence === "lobby");
       lobbyA.close();

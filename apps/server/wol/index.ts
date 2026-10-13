@@ -209,6 +209,17 @@ class WOL {
     return Object.values(this.lobbyClients).find((client) => client.player?.id == id);
   }
 
+  // La partida tiene su propia copia del jugador: al terminar (o al salir) se pasa a la de su lobby, si lo tiene
+  // abierto. Si no, lo siguiente que guardara el lobby pisaría lo ganado en la partida
+  syncLobbyPlayer(player: { id: number } & object): void {
+    const lobby = this.lobbyClientOf(player.id);
+    if (!lobby) return;
+    for (const [key, value] of Object.entries(player)) {
+      if (key == "command" || key == "online" || key == "status") continue; // son de cada conexión
+      (lobby.player as unknown as Record<string, unknown>)[key] = structuredClone(value);
+    }
+  }
+
   // Sus conexiones social (el frontend); puede tener varias pestañas abiertas
   socialClientsOf(id: number): SocialClient[] {
     return Object.values(this.socialClients).filter((client) => client.player?.id == id);

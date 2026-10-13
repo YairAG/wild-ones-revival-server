@@ -31,11 +31,12 @@ cada uno se corrige después en su propio commit.
 - **`updatePlayerData` guarda el objeto `player` entero** en Mongo. ~~Incluía `command` y `online`~~ (arreglado,
   `database.savePlayer`), y el `status` de la sala. ~~Ese "ready" se volvía a cargar en la siguiente partida~~ (arreglado): al entrar a una
   partida el `status` vuelve a "waiting". El valor inicial "playing" viene del registro original.
-- **El lobby se queda con una copia vieja del jugador**: la partida tiene su propia conexión y su propio objeto
+- ~~**El lobby se quedaba con una copia vieja del jugador**~~ (arreglado: al terminar o al salir de la partida se
+  copia a su lobby, `WOL.syncLobbyPlayer`): la partida tiene su propia conexión y su propio objeto
   `player`. Al terminar, el del lobby sigue con el oro, la XP, las victorias y la munición de antes, y lo siguiente
   que guarde el lobby (una compra, cambiar de mascota...) pisa en Mongo lo que se ganó en la partida.
-- Las estadísticas de cada mascota (`ownedPets[n]`: wins, losses, played, kills, deaths, gold, last) nunca se
-  actualizan: el panel de la mascota las muestra en 0 y la última partida como 12.31.1969.
+- ~~Las estadísticas de cada mascota (`ownedPets[n]`: wins, losses, played, kills, deaths, gold, last) nunca se
+  actualizaban~~ (arreglado: se suman al terminar cada partida, `Slot.addPetStats`): el panel de la mascota las muestra en 0 y la última partida como 12.31.1969.
 - ~~**Guardados del jugador fuera de orden**~~ (arreglado: las escrituras a un mismo documento van en fila, ver
   `database.update`): cada `updatePlayerData` manda el objeto completo y el driver de Mongo
   no garantiza el orden entre escrituras. Si una vieja llega después, pisa a la nueva (p. ej. al terminar la
