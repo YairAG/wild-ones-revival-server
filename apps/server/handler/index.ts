@@ -297,6 +297,8 @@ class Handler {
         game.handleOnReady(client);
         break;
       case "not_ready":
+        game.handleNotReady(client);
+        break;
       case "map_loaded":
         break;
       case "synch_check":
