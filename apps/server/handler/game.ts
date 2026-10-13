@@ -29,13 +29,6 @@ export function handleOnReady(client: GameClient): void {
   client.getGame().checkGame();
 }
 
-// Quita el "listo". En una sala privada que ya contaba para empezar, la cuenta atrás se detiene
-export function handleNotReady(client: GameClient): void {
-  const game = client.getGame();
-  game.updatePlayerStatus(client.player.id, "waiting");
-  if (game.isPrivate && game.isStarting()) game.stopGameStart();
-}
-
 export function handleSynchCheck(client: GameClient, data: Msg<"synch_check">): void {
   if (client.getGame().currentPlayer != client.player.id) return;
   client.getGame().lastSynchCheck = data;

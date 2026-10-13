@@ -264,7 +264,7 @@ Respuestas, en orden:
 
 ### 5.2 Arranque
 
-El server revisa cada 100 ms. Con **2 o más** jugadores conectados (en partida rápida no hace falta `on_ready`; en una sala privada, la creada con nombre o por invitación, todos tienen que haber mandado `on_ready`):
+El server revisa cada 100 ms. Con **2 o más** jugadores conectados (no hace falta `on_ready`):
 1. A todos: `game` con `status:"starting"`.
 2. 5 s después, a todos: `{"command":"game_join_confirmed"}`.
 3. A todos: `startGame`:
@@ -306,7 +306,7 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 | `ping` | — | no | `ping_ack` al que envía |
 | `chat` | cualquiera (`text`…) | no | Reenvía tal cual a los demás |
 | `on_ready` | — | no | `player.status = "ready"`; a todos: `game` |
-| `not_ready` | — | — | `player.status = "waiting"`. En una sala privada en `starting`, la cuenta atrás se detiene |
+| `not_ready` | — | — | Se ignora |
 | `map_loaded` | — | — | Se ignora |
 | `synch_check` | `{"tick":..,"synchCheck":".."}` | sí (sin lock) | Lo guarda para el reenvío periódico (5.3) |
 | `move_left` / `move_right` / `move_stop` | `{"d":[x,y]}` | sí | Guarda posición; reenvía a los demás |

@@ -33,7 +33,6 @@ class Slot {
   declare turnEndTick: number;
   declare clients: Record<string, GameClient>; // por id de jugador
   declare status: GameStatus;
-  declare isPrivate: boolean; // sala con nombre (Crear sala o invitación): espera a que todos estén listos
   declare min: number;
   declare skip: unknown[];
   declare time: string;
@@ -53,7 +52,6 @@ class Slot {
 
   constructor(wol: WOL, gameId: string, mapName: string, playerCount: number, gameDuration: number, turnDuration: number) {
     this.WOL = wol;
-    this.isPrivate = false;
     this.gameId = gameId;
 
     this.mapName = mapName;
@@ -153,10 +151,8 @@ class Slot {
   checkGame(): void {
     if (!this.isRunning()) {
       const len = Object.keys(this.clients).length;
-      // Partida rápida: arranca con 2. Sala privada: además, todos tienen que estar listos
-      const canStart = !this.isPrivate || this.everyoneReady();
 
-      if (len >= 2 && canStart && !this.startingTimeout) {
+      if (len >= 2 && !this.startingTimeout) {
         //everybody is ready, there are at least 2 players and the game hasn't been set to 'starting'
         log.info({ gameId: this.gameId }, "La partida empieza en 5 s");
         this.updateGameStatus("starting");
@@ -298,13 +294,7 @@ class Slot {
 
   //### player container helpers ###
 
-  everyoneReady(): boolean {
-    return Object.values(this.clients).every((client) => client.player.status == "ready");
-  }
-
   addClient(client: GameClient): void {
-    // Al entrar nadie está listo (el status venía de Mongo y podía quedar "ready" de otra partida)
-    client.player.status = "waiting";
     this.clients[client.player.id] = client;
     if (client.avatar != null) {
       this.physicsObjects.push(client.avatar);
