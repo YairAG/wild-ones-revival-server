@@ -90,7 +90,7 @@ function suite(transport: Transport) {
 
     const r3 = await caro.request({ command: "delete_pet", petId: "2" });
     assert.deepEqual(Object.keys(last(r3).ownedPets), ["1"]);
-    assert.equal(last(r3).currentPet, 1); // vuelve a la 1, como número
+    assert.equal(last(r3).currentPet, "1"); // vuelve a la 1 (texto, como en change_pet)
     assert.deepEqual(await caro.request({ command: "delete_pet", petId: "1" }), []); // no se borra la última
   });
 

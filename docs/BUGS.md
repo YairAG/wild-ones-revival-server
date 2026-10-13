@@ -70,7 +70,7 @@ cada uno se corrige después en su propio commit.
   `getSynchCommand`, que no existe).
 - ~~`game_name_check` no convertía espacios en guiones como `create_game`~~ (arreglado): "Sala 1" aparecía libre
   aunque existiera "Sala-1".
-- `delete_pet` deja `currentPet` como número (`1`) y `change_pet` como texto (`"2"`).
+- ~~`delete_pet` dejaba `currentPet` como número (`1`) y `change_pet` como texto (`"2"`)~~ (arreglado: texto).
 - `weapons/mortar.ts`: construir un `Mortar` lanza `TypeError` (`Physical.apply` sobre una clase).
 
 ## Protocolo / transporte

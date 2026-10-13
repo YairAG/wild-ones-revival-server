@@ -164,7 +164,7 @@ export function handleDeletePet(client: LobbyClient, data: Msg<"delete_pet">): v
   }
 
   delete client.player.ownedPets[len - 1];
-  client.player.currentPet = 1;
+  client.player.currentPet = "1"; // como en change_pet y el registro: texto
   client.sendUpdate();
   client.updatePlayerData();
 }
