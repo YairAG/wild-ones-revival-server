@@ -20,6 +20,8 @@ cada uno se corrige después en su propio commit.
   jugadores, terminaba la partida con jugadores vivos.
 - ~~**`packet.hasOwnProperty(...)` en `slot.sendPacket/sendPacketE`**~~ (arreglado, `Object.hasOwn`): un mensaje
   reenviado con un campo llamado `hasOwnProperty` hacía fallar el reenvío (se perdía para todos).
+- **`projectile` no revisa si el jugador tiene el arma** (la validación del original está comentada): se puede
+  disparar cualquier arma de WeaponsGrid sin comprarla, y a los demás les llega.
 - ~~**`chat` sin filtro**~~ (arreglado): se reenviaba el objeto tal cual, con cualquier campo, y se podía hablar
   con el `id`/`dname` de otro. Ahora el servidor arma el mensaje (texto de hasta 200 caracteres, 1 por segundo).
   Sigue sin filtro de groserías (el del chat global está en wildones-accounts).
