@@ -6,6 +6,7 @@ import assert = require("node:assert/strict");
 import { startTestServer, user, sleep, TRANSPORTS, type TestEnv } from "./helpers/server";
 import type { Document } from "mongodb";
 import { TestClient, type Message, type Transport } from "./helpers/client";
+import Utils = require("../helpers/utils.js");
 
 function suite(transport: Transport) {
   let env: TestEnv;
@@ -245,14 +246,24 @@ function suite(transport: Transport) {
     });
 
     await t.test("cuando queda uno vivo termina la partida", async () => {
+      // Turno de Beto: le baja la vida a Ana de 1000 (la de su perro) a 650 → 350 de daño para Beto
+      gameA.send({ command: "synch_pts", value: Utils.intToString(650) });
+      await sleep(200);
       gameB.send({ command: "player_died", id: 2 }); // es el turno de Beto: solo cuenta lo que reporta él
 
-      for (const g of [gameA, gameB]) {
-        const stats = await g.next("game_stats");
-        assert.deepEqual(stats.players, [1, 2]); // vivo primero, luego los muertos
-        assert.equal(stats.place, 0);
-        await g.next("endGame");
-      }
+      const [statsA, statsB] = [await gameA.next("game_stats"), await gameB.next("game_stats")];
+      for (const stats of [statsA, statsB]) assert.deepEqual(stats.players, [1, 2]); // vivo primero
+      // Partida de 2: premios a la mitad (helpers/rewards.ts). Ana, primera: solo el lugar
+      assert.equal(statsA.place, 1);
+      assert.equal(statsA.placeGold, 36);
+      assert.equal(statsA.kills, 0);
+      // Beto, segundo: su lugar y 3 puntos de daño a la mitad (se eliminó solo: no es eliminación)
+      assert.equal(statsB.place, 2);
+      assert.equal(statsB.damage, 350);
+      assert.equal(statsB.kills, 0);
+      assert.deepEqual([statsB.placeGold, statsB.damageGold, statsB.placeXp], [30, 1, 22]);
+      assert.ok(statsB.endingXP - statsB.startingXP >= 22 + 1, "la XP ganada incluye los premios");
+      for (const g of [gameA, gameB]) await g.next("endGame");
       // Ana (viva) suma una victoria; Beto (muerto), una derrota. Los dos, una partida
       await waitForUser("Ana", (d) => d.wins == 1 && d.losses == 0 && d.gamecount == 1);
       await waitForUser("Beto", (d) => d.wins == 0 && d.losses == 1 && d.gamecount == 1);

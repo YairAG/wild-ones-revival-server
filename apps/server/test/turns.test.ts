@@ -56,6 +56,9 @@ function suite(transport: Transport) {
     ana.send({ command: "player_died", id: 2 });
     const stats = await ana.next("game_stats");
     assert.deepEqual(stats.players, [1, 2, 3]); // vivo primero, luego los muertos (el último en morir antes)
+    // Las dos muertes fueron en su turno: cuentan como eliminaciones suyas. Con 3 jugadores, premios completos
+    assert.equal(stats.kills, 2);
+    assert.deepEqual([stats.placeGold, stats.killsGold, stats.killsXp], [72, 20, 30]);
   });
 
   test("solo cuentan las muertes que reporta el jugador en turno", async () => {

@@ -4,7 +4,7 @@ import type Client = require("./client.abstract.js");
 import type Database = require("../database.js");
 import type WOL = require("../wol");
 import type { Player } from "wildones-protocol";
-import type { GameSocket, UserDoc } from "../types";
+import type { GameSocket, PlayerGameStats, Rewards, UserDoc } from "../types";
 import log = require("../helpers/log.js");
 import levelFromXp = require("../helpers/level.js");
 
@@ -258,23 +258,25 @@ class GameClient {
   }
 
   // Estadísticas de fin de partida: todo en 0 salvo el orden de jugadores
-  sendGameStats(playerOrder: (number | string)[]): void {
+  // Pantalla final del cliente (GameEarningsObj): oro total = damageGold + killsGold + placeGold, XP ganada =
+  // endingXP − startingXP. Los niveles van desde 0 (el cliente muestra "nivel endLevel + 1") y place desde 1
+  sendGameStats(playerOrder: (number | string)[], stats?: PlayerGameStats, earned?: Rewards): void {
     const statsCmd = {
       command: "game_stats",
-      startLevel: 0,
-      damageGold: 0,
-      killsGold: 0,
-      placeGold: 0,
-      damageXp: 0,
-      kills: 0,
-      endLevel: 0,
-      placeXp: 0,
-      killsXp: 0,
-      endingXP: 0,
       players: playerOrder,
-      place: 0,
-      damage: 0,
-      startingXP: 0,
+      place: playerOrder.findIndex((id) => id == this.player.id) + 1,
+      damage: Math.round(stats?.damage ?? 0),
+      kills: stats?.kills ?? 0,
+      placeGold: earned?.placeGold ?? 0,
+      killsGold: earned?.killsGold ?? 0,
+      damageGold: earned?.damageGold ?? 0,
+      placeXp: earned?.placeXp ?? 0,
+      killsXp: earned?.killsXp ?? 0,
+      damageXp: earned?.damageXp ?? 0,
+      startingXP: stats?.startingXp ?? this.player.xp,
+      endingXP: this.player.xp,
+      startLevel: Math.max(0, (stats?.startLevel ?? this.player.level) - 1),
+      endLevel: Math.max(0, this.player.level - 1),
     };
     log.debug({ players: playerOrder }, "Envío game_stats");
     this.sendPacket(statsCmd);

@@ -1,3 +1,4 @@
 [
+  { "type": "dog", "price": 100, "currency": "gold", "petPower": "bone", "hp": 1000 },
   { "type": "cat", "price": 100, "currency": "gold", "petPower": "scratch" }
 ]

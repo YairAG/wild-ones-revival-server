@@ -2,3 +2,4 @@
 export type * from "./config";
 export type * from "./socket";
 export type * from "./user";
+export type * from "./game-stats";

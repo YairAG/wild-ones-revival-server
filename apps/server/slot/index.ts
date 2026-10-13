@@ -12,6 +12,8 @@ import type WOL = require("../wol");
 import type WeaponProperties = require("../properties/weapon.properties.js");
 import type { GameStatus } from "wildones-protocol";
 import log = require("../helpers/log.js");
+import rewards = require("../helpers/rewards.js");
+import type { PlayerGameStats } from "../types";
 
 type PointXY = { X: number; Y: number };
 type Packet = { [key: string]: unknown };
@@ -41,6 +43,7 @@ class Slot {
   declare sumOfLevels: number;
   declare session: string;
   declare deadPlayers: (number | string)[];
+  declare stats: Record<string, PlayerGameStats>; // daño y eliminaciones de cada jugador, por id
   declare weapon: WeaponManager;
   declare field: Field;
   declare commands: unknown[];
@@ -85,6 +88,7 @@ class Slot {
     this.sumOfLevels = 0;
     this.session = "undefined";
     this.deadPlayers = [];
+    this.stats = {};
     this.initialCount = 0;
 
     this.weapon = new WeaponManager(this);
@@ -257,6 +261,9 @@ class Slot {
     if (this.clients[id] && !this.clients[id].isDead()) {
       this.clients[id].avatar.dead = true;
       this.deadPlayers.push(id);
+      // La eliminación cuenta para quien tiene el turno (si no se eliminó solo)
+      const killer = this.stats[this.currentPlayer];
+      if (killer && this.currentPlayer != id) killer.kills += 1;
     } else {
       //its been removed from the clients array
     }
@@ -383,6 +390,18 @@ class Slot {
 
     this.initialCount = cmd.co.length;
 
+    // La vida inicial es la de la mascota (Pets.dat; ningún accesorio da vida extra)
+    for (const client of Object.values(this.clients)) {
+      const pet = client.player.ownedPets[client.player.currentPet] as { type: string } | undefined;
+      this.stats[client.player.id] = {
+        hp: Number(this.WOL.petsObj[pet?.type ?? ""]?.hp ?? 0),
+        damage: 0,
+        kills: 0,
+        startingXp: client.player.xp,
+        startLevel: client.player.level,
+      };
+    }
+
     this.sendPacket(cmd);
     this.setNextTurn(200);
   }
@@ -464,13 +483,17 @@ class Slot {
     const alive = Object.values(this.clients).filter((c) => !c.isDead()).map((c) => c.player.id);
     const playerOrder = [...alive, ...this.deadPlayers.reverse()];
 
-    if (playerOrder.length > 2) {
-      for (let i = 0; i < playerOrder.length; i++) {
-        if (!this.clients[playerOrder[i]]) continue;
-        this.clients[playerOrder[i]].addXP(9 * (6 - i));
-        this.clients[playerOrder[i]].addGold(12 * (6 - i), true);
-      }
-    }
+    // Premios por lugar, eliminaciones y daño (helpers/rewards.ts; a la mitad si empezaron 2)
+    const earned: Record<string, ReturnType<typeof rewards>> = {};
+    playerOrder.forEach((id, place) => {
+      const client = this.clients[id];
+      const stats = this.stats[id];
+      if (!client || !stats) return;
+      const r = rewards(place, stats.kills, stats.damage, this.initialCount);
+      earned[id] = r;
+      client.addGold(r.placeGold + r.killsGold + r.damageGold);
+      client.addXP(r.placeXp + r.killsXp + r.damageXp); // también guarda y manda el jugador
+    });
 
     // Estadísticas del jugador: todos suman una partida, gana el único vivo y pierden los muertos. Si se acabó el
     // tiempo con varios vivos, esos empatan (ni ganan ni pierden). Quien salió antes ya no está en clients
@@ -482,7 +505,7 @@ class Slot {
     }
 
     for (const key in this.clients) {
-      this.clients[key].sendGameStats(playerOrder);
+      this.clients[key].sendGameStats(playerOrder, this.stats[key], earned[key]);
     }
 
     const cmd = this.getGameRecord("endGame");

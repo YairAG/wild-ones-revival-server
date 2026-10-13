@@ -324,7 +324,7 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 | `turn_complete` | — | sí | Termina el turno en el siguiente tick |
 | `position` | `{"x","y","tick"}` | — | Se ignora |
 | `request_synch` | — | — | Solo loguea |
-| `synch_pts` | `{"value":"<hex>"}` | — | Se ignora |
+| `synch_pts` | `{"value":"<hex>"}` | — | Vida nueva de quien lo manda: cuenta el daño para los premios (5.5) |
 | `synchronization` | `{"timeLoop":{..},"avatarList":[{"player":id,"hp":"<hex>",..}],..}` | no | Ver abajo |
 | `player_died` | `{"id":142604}` | sí (sin lock) | Marca a ese jugador como muerto. Si no lo envía el jugador en turno, se ignora (`warn` en el log). Una muerte repetida no se cuenta dos veces |
 | `exiting` | — | no | Reenvía a los demás |
@@ -354,13 +354,17 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 Se revisa cada 100 ms. Termina si quedan ≤ 1 conectados, ≤ 1 vivos o se acabó el tiempo (`gameDuration`):
 1. Orden final: los vivos primero (por id; puede haber varios si se acabó el tiempo) y luego los muertos (el
    último en morir antes).
-2. Si había **más de 2** jugadores: XP `9 × (6 − puesto)` y oro `12 × (6 − puesto)` (puesto desde 0).
-3. A cada uno: `game_stats` (todo en 0 salvo `players`):
+2. Premios (`helpers/rewards.ts`; puesto desde 0), a la mitad si la partida empezó con 2 jugadores:
+   - por lugar: XP `9 × (6 − puesto)` y oro `12 × (6 − puesto)`;
+   - por eliminación: 15 de XP y 10 de oro. Una muerte cuenta para quien tiene el turno, si no es el muerto;
+   - por daño: 1 de XP y 1 de oro cada 100. El daño sale de `synch_pts`: lo que bajó la vida del que lo manda
+     (empieza con la de su mascota en Pets.dat) se le acredita a quien tiene el turno, si no es él mismo.
+3. A cada uno, `game_stats` con lo suyo (`place` desde 1; los niveles desde 0, como los muestra el cliente):
 
 ```json
-{"command":"game_stats","players":[142603,142604],"place":0,"damage":0,"kills":0,
- "startLevel":0,"endLevel":0,"startingXP":0,"endingXP":0,
- "damageGold":0,"killsGold":0,"placeGold":0,"damageXp":0,"placeXp":0,"killsXp":0}
+{"command":"game_stats","players":[142603,142604],"place":2,"damage":350,"kills":0,
+ "startLevel":4,"endLevel":4,"startingXP":1200,"endingXP":1231,
+ "damageGold":1,"killsGold":0,"placeGold":30,"damageXp":1,"placeXp":22,"killsXp":0}
 ```
 
 4. A todos: registro `endGame` (2.3).

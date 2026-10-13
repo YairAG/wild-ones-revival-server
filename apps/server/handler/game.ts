@@ -187,11 +187,19 @@ export function handleRequestSynch(client: GameClient, data: { pid: number | str
   client.sendPacket(client.getGame().clients[data.pid].getSynchCommand());
 }
 
-// El original convertía el mensaje en "adjust_pts", pero el envío está comentado: no tiene efecto
-export function handleSynchPts(_client: GameClient, data: Msg<"synch_pts">): void {
-  const value = Utils.stringToInt(data.value);
-  if (value <= 0) return;
-  //client.getGame().sendPacketE(data, client);
+// Cada cliente lo manda con su vida nueva al recibir daño (codificada, ver Utils.stringToInt). Lo que bajó se le
+// acredita a quien tiene el turno, si no es él mismo, para los premios de fin de partida. (El original lo
+// convertía en "adjust_pts", pero el envío está comentado.)
+export function handleSynchPts(client: GameClient, data: Msg<"synch_pts">): void {
+  if (String(data.value).length != 16) return;
+  const game = client.getGame();
+  const mine = game.stats[client.player.id];
+  if (!mine) return;
+  const hp = Math.max(0, Utils.stringToInt(data.value));
+  const damage = mine.hp - hp;
+  mine.hp = hp;
+  const attacker = game.stats[game.currentPlayer];
+  if (damage > 0 && attacker && game.currentPlayer != client.player.id) attacker.damage += damage;
 }
 
 export function handleLogProjectile(client: GameClient, data: Msg<"log_projectile">): void {

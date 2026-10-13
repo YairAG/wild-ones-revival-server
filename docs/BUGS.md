@@ -52,10 +52,11 @@ cada uno se corrige después en su propio commit.
 - ~~`gameDuration` no se aplicaba~~ (arreglado): al acabarse el tiempo termina la partida, con los vivos
   empatados. (El original probablemente hacía "muerte súbita" con agua subiendo: `disaster: flood` en los
   mapas. Queda para cuando exista `packages/sim`.)
-- Premios de fin de partida solo con más de 2 jugadores; `game_stats` siempre va en 0. El cliente usa esos campos
-  para la pantalla final (lugar, oro, XP ganada, eliminaciones, "subiste de nivel"), así que siempre decía 0.
-  El servidor no lleva la cuenta del daño ni de las eliminaciones: ignora `synch_pts` (cada cliente lo manda con
-  su vida nueva al recibir daño) y nadie llama a `requestSynch`, así que `synchronization` no llega en partida.
+- ~~Premios de fin de partida solo con más de 2 jugadores; `game_stats` siempre iba en 0~~ (arreglado): el
+  cliente usa esos campos para la pantalla final (lugar, oro, XP ganada, eliminaciones, "subiste de nivel"), así
+  que siempre decía 0. Ahora el servidor cuenta daño (con `synch_pts`, que cada cliente manda con su vida nueva al
+  recibir daño) y eliminaciones, da premios también con 2 jugadores (a la mitad) y los manda en `game_stats`
+  (ver PROTOCOL.md 5.5). Sigue: nadie llama a `requestSynch`, así que `synchronization` no llega en partida.
 - ~~`level` nunca cambiaba~~ (arreglado): el cliente calcula el nivel a partir de `xp` y `Levels.dat`, pero el
   servidor no lo guardaba y se quedaba en 0. Ahora se calcula igual (`helpers/level.ts`) al entrar al lobby y al
   ganar XP, y se guarda.
