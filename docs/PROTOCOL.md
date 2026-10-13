@@ -264,7 +264,7 @@ Respuestas, en orden:
 
 ### 5.2 Arranque
 
-El server revisa cada 100 ms. Con **2 o más** jugadores conectados (no hace falta `on_ready`):
+El server revisa cada 100 ms. Con **2 o más** jugadores conectados (no hace falta `on_ready`: el SWF marca a todos como listos solo). En una **sala privada** (creada con nombre o por invitación) además tiene que estar llena, o haber pasado 30 s desde que entró el último jugador:
 1. A todos: `game` con `status:"starting"`.
 2. 5 s después, a todos: `{"command":"game_join_confirmed"}`.
 3. A todos: `startGame`:
