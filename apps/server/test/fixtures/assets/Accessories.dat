@@ -1,4 +1,5 @@
 [
   { "type": "Gorro", "price": 50, "category": "heads" },
+  { "type": "Casco", "price": 0, "category": "heads" },
   { "type": "Capa", "price": 5, "currency": "treats", "category": "misc" }
 ]

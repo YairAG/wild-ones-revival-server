@@ -41,8 +41,8 @@ cada uno se corrige después en su propio commit.
 ## Lógica
 
 - `get_medals`: en el original había un segundo `case` (respondía `medal_info`) que nunca se ejecutaba.
-- `handleAccLoad`: cuenta repetidos por `accessoriesObj[item].type` (único por accesorio), así que nunca detecta
-  dos accesorios de la misma categoría.
+- ~~`handleAccLoad`: contaba repetidos por `accessoriesObj[item].type` (único por accesorio)~~ (arreglado): nunca
+  detectaba dos accesorios de la misma categoría, y con uno que no existe lanzaba TypeError.
 - ~~`projectile` restaba munición aunque el jugador no tuviera ese arma~~ (arreglado): con `mortar` y los
   poderes de mascota, que son gratis, quedaba `undefined - 1 = NaN`, que se guardaba en Mongo y viajaba como
   `null`. Ahora solo se resta si el arma está en `userWeaponsOwned`.

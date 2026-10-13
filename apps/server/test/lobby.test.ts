@@ -63,6 +63,9 @@ function suite(transport: Transport) {
 
     // dos veces el mismo accesorio: se rechaza
     assert.deepEqual(await caro.request({ command: "set_acc_load", load: ["Gorro", "Gorro"] }), []);
+    // dos de la misma categoría (cabeza): también
+    await caro.request({ command: "buy_accessory", type: "Casco" });
+    assert.deepEqual(await caro.request({ command: "set_acc_load", load: ["Gorro", "Casco"] }), []);
     // uno que no tiene: se rechaza
     assert.deepEqual(await caro.request({ command: "set_acc_load", load: ["Capa"] }), []);
   });

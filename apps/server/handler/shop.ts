@@ -73,21 +73,11 @@ export function handleBuyAccessory(client: LobbyClient, data: Msg<"buy_accessory
 export function handleAccLoad(client: LobbyClient, data: Msg<"set_acc_load">, wol: WOL): void {
   if (client.connectionType != "lobby") return;
 
-  let valid = data.load.every(function (val) {
-    return client.player.userAccessories.indexOf(val) >= 0;
-  });
-
-  // bug: cuenta por .type (único por accesorio) en vez de .category (ver docs/BUGS.md)
-  const occurrences: Record<string, number> = {};
-  for (const key in data.load) {
-    const item = data.load[key];
-    occurrences[wol.accessoriesObj[item].type] =
-      occurrences[wol.accessoriesObj[item].type] != null ? occurrences[wol.accessoriesObj[item].type] + 1 : 1;
-    if (occurrences[wol.accessoriesObj[item].type] > 1) {
-      valid = false;
-      break;
-    }
-  }
+  // Todos tienen que ser suyos y existir, y uno por categoría (cabeza, cuerpo...)
+  const categories = data.load.map((item) => wol.accessoriesObj[item]?.category);
+  const valid =
+    data.load.every((item) => client.player.userAccessories.indexOf(item) >= 0 && wol.accessoriesObj[item]) &&
+    new Set(categories).size == categories.length;
 
   if (valid) {
     client.player.ownedPets[client.player.currentPet].accessories = data.load;
