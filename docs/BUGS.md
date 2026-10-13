@@ -92,7 +92,10 @@ cada uno se corrige después en su propio commit.
 - ~~Mensajes partidos en varios paquetes TCP solo se reensamblaban en conexiones `game`~~ (arreglado: en todas).
 - ~~Si un comando lanzaba una excepción, se descartaba todo lo que quedaba en ese paquete TCP~~ (arreglado: solo se
   pierde ese mensaje, ver `dispatch` en handler/index.ts).
-- La longitud del mensaje se cuenta en caracteres JS, no en bytes (posible problema con ñ/tildes).
+- La longitud del mensaje se cuenta en caracteres JS, no en bytes. Confirmado: el SWF la cuenta en bytes
+  (`SocketConnection`: `writeUTFBytes` y `readUTFBytes(amt)`). Con una ñ o un acento (chat, nombres de mascota o
+  de sala) el SWF corta el JSON y desordena lo que sigue, y lo que manda el SWF se queda esperando bytes que no
+  llegan. El frontend (conexión social) también cuenta caracteres.
 
 ## Código muerto
 
