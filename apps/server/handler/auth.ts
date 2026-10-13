@@ -47,8 +47,7 @@ export function handleLogin(
     client.loggedIn = true;
     if (client.setupPlayer(doc) == -1) return;
     client.WOL.updatePresence(id);
-    // @ts-expect-error bug: en conexiones game no existe sendPlayerSetup (ver docs/BUGS.md)
-    client.sendPlayerSetup();
+    if ("sendPlayerSetup" in client) client.sendPlayerSetup(); // solo el lobby lo tiene
     client.sendUpdate();
   });
 }

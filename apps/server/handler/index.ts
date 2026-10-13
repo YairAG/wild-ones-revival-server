@@ -284,8 +284,8 @@ class Handler {
         auth.handleLogin(client, packet);
         break;
       case "give_medal":
-        // @ts-expect-error bug: handleSendMedal no existe (ver docs/BUGS.md)
-        this.handleSendMedal(client, packet);
+        // El original llamaba a handleSendMedal, que no existe (lanzaba TypeError). No sabemos qué hacía
+        log.debug({ id: client.player?.id }, "give_medal sin implementar");
         break;
       case "ping":
         handlePing(client);
