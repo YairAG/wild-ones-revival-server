@@ -31,7 +31,7 @@ cada uno se corrige después en su propio commit.
 
 - ~~`handler/shop.ts` `handleSetWeaponsEquipped`: usaba `invalidItemLog` sin `this.` → `ReferenceError`~~ (arreglado).
 - ~~`helpers/logger.ts` usaba `fs` sin importarlo~~ (archivo eliminado al pasar a pino).
-- `wol/matchmaking.ts` `findSlot` con nombre propio: usa `tmpId` sin definir si el nombre ya existe.
+- ~~`wol/matchmaking.ts` `findSlot` con nombre propio: usaba `tmpId` sin definir si el nombre ya existía~~ (arreglado).
 - `logIn` en una conexión `game` llama a `sendPlayerSetup`, que `GameClient` no tiene.
 - `give_medal` llama a `handleSendMedal`, que no existe.
 - ~~`join_game` metía al cliente de **lobby** en la partida (`gameRef.addClient(client)`), aunque no tiene avatar~~ (arreglado).

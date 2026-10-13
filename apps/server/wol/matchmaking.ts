@@ -74,16 +74,13 @@ export function findSlot(wol: WOL, mapDetails: MapDetails, customName: string | 
   const gameDuration = parseInt(String(mapDetails.gameDuration)) * 60 * 1000;
   const turnDuration = parseInt(String(mapDetails.turnDuration)) * 1000;
   let gameId: string;
-  let tmpId: string | undefined; // en el original era un `var` del bucle de abajo, visible en todo el método
 
   if (customName) {
     gameId = customName;
 
+    // Ya existe: si no está ocupada, se entra a esa (create_game revisa el nombre antes, así que hoy no pasa)
     if (wol.slots[gameId]) {
-      // bug: usa tmpId (undefined) en vez de gameId, lanza TypeError (ver docs/BUGS.md)
-      if (isOccupied(wol.slots[tmpId as string])) {
-        return 0;
-      }
+      return isOccupied(wol.slots[gameId]) ? 0 : gameId;
     } else {
       wol.createSlot(gameId, mapName, playerCount, gameDuration, turnDuration);
       wol.slots[gameId].isPrivate = true; // sala con nombre: espera a que todos estén listos
@@ -96,7 +93,7 @@ export function findSlot(wol: WOL, mapDetails: MapDetails, customName: string | 
     gameId = gameId.split(" ").join("-");
 
     for (let i = 0; i < wol.config.maxSlots; i++) {
-      tmpId = gameId + i;
+      const tmpId = gameId + i;
       if (wol.slots[tmpId]) {
         if (isOccupied(wol.slots[tmpId])) {
           log.debug({ gameId: tmpId }, "Partida ocupada");
