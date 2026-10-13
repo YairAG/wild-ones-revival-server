@@ -86,7 +86,6 @@ export function findSlot(wol: WOL, mapDetails: MapDetails, customName: string | 
       }
     } else {
       wol.createSlot(gameId, mapName, playerCount, gameDuration, turnDuration);
-      wol.slots[gameId].isPrivate = true; // sala con nombre: espera a llenarse (ver Slot.checkGame)
       log.debug({ gameId }, "Sala creada");
       return gameId;
     }

@@ -13,9 +13,6 @@ import type WeaponProperties = require("../properties/weapon.properties.js");
 import type { GameStatus } from "wildones-protocol";
 import log = require("../helpers/log.js");
 
-// Una sala privada sin llenar arranca 30 s después de que entró el último jugador (con al menos 2)
-const PRIVATE_ROOM_WAIT_MS = 30_000;
-
 type PointXY = { X: number; Y: number };
 type Packet = { [key: string]: unknown };
 
@@ -36,8 +33,6 @@ class Slot {
   declare turnEndTick: number;
   declare clients: Record<string, GameClient>; // por id de jugador
   declare status: GameStatus;
-  declare isPrivate: boolean; // sala con nombre (Crear sala o invitación)
-  declare lastJoinAt: number; // cuándo entró el último jugador
   declare min: number;
   declare skip: unknown[];
   declare time: string;
@@ -57,8 +52,6 @@ class Slot {
 
   constructor(wol: WOL, gameId: string, mapName: string, playerCount: number, gameDuration: number, turnDuration: number) {
     this.WOL = wol;
-    this.isPrivate = false;
-    this.lastJoinAt = 0;
     this.gameId = gameId;
 
     this.mapName = mapName;
@@ -158,10 +151,8 @@ class Slot {
   checkGame(): void {
     if (!this.isRunning()) {
       const len = Object.keys(this.clients).length;
-      // Partida rápida: arranca con 2. Sala privada: cuando se llena, o si pasaron 30 s desde que entró el último
-      const canStart = !this.isPrivate || len >= this.playerCount || Date.now() - this.lastJoinAt >= PRIVATE_ROOM_WAIT_MS;
 
-      if (len >= 2 && canStart && !this.startingTimeout) {
+      if (len >= 2 && !this.startingTimeout) {
         //everybody is ready, there are at least 2 players and the game hasn't been set to 'starting'
         log.info({ gameId: this.gameId }, "La partida empieza en 5 s");
         this.updateGameStatus("starting");
@@ -305,7 +296,6 @@ class Slot {
 
   addClient(client: GameClient): void {
     this.clients[client.player.id] = client;
-    this.lastJoinAt = Date.now();
     if (client.avatar != null) {
       this.physicsObjects.push(client.avatar);
     } else log.warn({ id: client.player.id }, "Cliente sin avatar en la partida");
