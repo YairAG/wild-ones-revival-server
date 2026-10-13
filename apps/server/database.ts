@@ -6,6 +6,7 @@ import log = require("./helpers/log.js");
 const url = process.env.MONGO_URL || "mongodb://localhost:27017/emu";
 
 let database: Db;
+const pending = new Map<string, Promise<unknown>>(); // última escritura en curso por documento (ver update)
 
 class Database {
   connect(): void {
@@ -27,11 +28,17 @@ class Database {
     this.update({ id: player.id }, data as Partial<UserDoc>);
   }
 
+  // Las escrituras a un mismo documento van en fila: el driver no garantiza el orden, y una vieja que llegara
+  // después pisaría a la nueva (cada savePlayer manda el jugador completo)
   update(condition: Filter<UserDoc>, data: Partial<UserDoc>): void {
-    database
-      .collection<UserDoc>("users")
-      .updateOne(condition, { $set: data })
-      .catch(function () {});
+    const key = JSON.stringify(condition);
+    const write = (pending.get(key) ?? Promise.resolve())
+      .then(() => database.collection<UserDoc>("users").updateOne(condition, { $set: data }))
+      .catch(function () {})
+      .finally(() => {
+        if (pending.get(key) === write) pending.delete(key);
+      });
+    pending.set(key, write);
   }
 
   count(condition: Filter<UserDoc>, callback: (n?: number) => void): void {

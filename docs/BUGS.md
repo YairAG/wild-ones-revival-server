@@ -31,7 +31,8 @@ cada uno se corrige después en su propio commit.
 - **`updatePlayerData` guarda el objeto `player` entero** en Mongo. ~~Incluía `command` y `online`~~ (arreglado,
   `database.savePlayer`), y el `status` de la sala. ~~Ese "ready" se volvía a cargar en la siguiente partida~~ (arreglado): al entrar a una
   partida el `status` vuelve a "waiting". El valor inicial "playing" viene del registro original.
-- **Guardados del jugador fuera de orden**: cada `updatePlayerData` manda el objeto completo y el driver de Mongo
+- ~~**Guardados del jugador fuera de orden**~~ (arreglado: las escrituras a un mismo documento van en fila, ver
+  `database.update`): cada `updatePlayerData` manda el objeto completo y el driver de Mongo
   no garantiza el orden entre escrituras. Si una vieja llega después, pisa a la nueva (p. ej. al terminar la
   partida: el guardado de los premios, sin la victoria, puede llegar después del que la suma).
 
