@@ -41,12 +41,13 @@ cada uno se corrige después en su propio commit.
 - `get_medals`: en el original había un segundo `case` (respondía `medal_info`) que nunca se ejecutaba.
 - `handleAccLoad`: cuenta repetidos por `accessoriesObj[item].type` (único por accesorio), así que nunca detecta
   dos accesorios de la misma categoría.
-- `projectile` resta munición aunque el jugador no tenga ese arma (`mortar` es gratis): `undefined - 1 = NaN`,
-  que se guarda en Mongo y viaja como `null`. Fijado en los tests. Pasa también con los poderes de mascota
-  (`petWeapon` en WeaponsGrid), que son gratis.
-- `set_weapons_equipped`: las armas gratis están escritas a mano (mortar, superjump, punch, bone, dig, climb,
-  walk), las de `Levels.dat[0].weapon` del original. Los demás poderes de mascota (scratch, giant, tongue...)
-  se rechazan aunque tengas la mascota, así que nunca aparecen en la partida.
+- ~~`projectile` restaba munición aunque el jugador no tuviera ese arma~~ (arreglado): con `mortar` y los
+  poderes de mascota, que son gratis, quedaba `undefined - 1 = NaN`, que se guardaba en Mongo y viajaba como
+  `null`. Ahora solo se resta si el arma está en `userWeaponsOwned`.
+- ~~`set_weapons_equipped`: las armas gratis estaban escritas a mano~~ (arreglado): eran las de
+  `Levels.dat[0].weapon` del original, así que los demás poderes de mascota (scratch, giant, tongue...) se
+  rechazaban aunque tuvieras la mascota. Ahora son gratis las de `Levels.dat` nivel 0 y el `petPower` de cada
+  mascota del jugador.
 - ~~`turn_complete` no hacía nada~~ (arreglado): ahora el jugador en turno puede terminar su turno.
 - ~~`gameDuration` no se aplicaba~~ (arreglado): al acabarse el tiempo termina la partida, con los vivos
   empatados. (El original probablemente hacía "muerte súbita" con agua subiendo: `disaster: flood` en los

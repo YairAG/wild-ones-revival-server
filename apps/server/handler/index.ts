@@ -232,7 +232,7 @@ class Handler {
         shop.handleBuyAmmo(client, packet, wol);
         break;
       case "set_weapons_equipped":
-        shop.handleSetWeaponsEquipped(client, packet);
+        shop.handleSetWeaponsEquipped(client, packet, wol);
         break;
       case "game_name_check":
         rooms.handleGameNameCheck(client, packet, wol);

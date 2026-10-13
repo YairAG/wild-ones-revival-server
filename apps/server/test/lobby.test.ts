@@ -80,6 +80,10 @@ function suite(transport: Transport) {
     // color no permitido: nada
     assert.deepEqual(await caro.request({ ...pet, color1: 0x123456 }), []);
 
+    // con la mascota, su poder (petPower) se puede equipar sin tenerlo en userWeaponsOwned
+    const equip = await caro.request({ command: "set_weapons_equipped", value: ["walk", "mortar", "scratch"] });
+    assert.deepEqual(last(equip).userWeaponsEquipped, ["walk", "mortar", "scratch"]);
+
     const r2 = await caro.request({ command: "change_pet", name: "2" });
     assert.equal(last(r2).currentPet, "2");
     assert.deepEqual(await caro.request({ command: "change_pet", name: "9" }), []); // no la tiene

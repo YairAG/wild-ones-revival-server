@@ -235,7 +235,7 @@ function suite(transport: Transport) {
       const afterGold = await gameA.next("player");
       assert.ok(afterGold.gold >= 1001 && afterGold.gold <= 1006, "oro " + afterGold.gold);
       const final = await gameA.next("player");
-      assert.equal(final.userWeaponsOwned.mortar, null); // bug: undefined - 1 = NaN → null en JSON
+      assert.equal(final.userWeaponsOwned.mortar, undefined); // es gratis: no se resta munición
 
       await gameB.next("set_tick"); // va al jugador que empieza turno
       const turnA = await gameA.next("changeTurn");

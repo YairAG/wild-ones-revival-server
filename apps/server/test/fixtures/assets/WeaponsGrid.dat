@@ -1,5 +1,6 @@
 [
   { "type": "mortar", "price": 0, "timeAfter": 100 },
   { "type": "grenade", "price": 10, "currency": "gold", "purchaseAmount": 2, "timeAfter": 100 },
-  { "type": "goo", "price": 3, "currency": "treats" }
+  { "type": "goo", "price": 3, "currency": "treats" },
+  { "type": "scratch", "price": 0, "petWeapon": true }
 ]

@@ -159,8 +159,9 @@ export function handleProjectile(client: GameClient, data: Msg<"projectile">, wo
     client.addGold(Math.round(Math.random() * 5) + 1, true);
   }
 
-  // bug: si no tiene el arma, undefined - 1 = NaN (ver docs/BUGS.md)
-  if (data.crate != "true") client.player.userWeaponsOwned[data.ammo_type] -= 1;
+  // Las gratis (mortar, poderes de mascota) no están en userWeaponsOwned: no gastan munición
+  const owned = client.player.userWeaponsOwned;
+  if (data.crate != "true" && owned[data.ammo_type] != null) owned[data.ammo_type] -= 1;
 
   client.updatePlayerData();
   client.sendUpdate();

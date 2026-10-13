@@ -203,17 +203,19 @@ export function handleBuyAmmo(client: LobbyClient, data: Msg<"buy_ammo">, wol: W
   }
 }
 
-export function handleSetWeaponsEquipped(client: LobbyClient, data: Msg<"set_weapons_equipped">): void {
+// Armas gratis (no hace falta tenerlas): las de Levels.dat nivel 0 y el poder de cada mascota del jugador
+function freeWeapons(client: LobbyClient, wol: WOL): string[] {
+  const levels = wol.levelsObj as { weapon?: string[] }[];
+  const pets = Object.values(client.player.ownedPets) as { type: string }[];
+  const powers = pets.map((pet) => wol.petsObj[pet.type]?.petPower);
+  return ["empty", "", ...(levels[0]?.weapon ?? []), ...powers];
+}
+
+export function handleSetWeaponsEquipped(client: LobbyClient, data: Msg<"set_weapons_equipped">, wol: WOL): void {
+  const free = freeWeapons(client, wol);
   let validSet = true;
   for (let i = 0; i < data.value.length; i++) {
-    // Armas gratis: no hace falta tenerlas
-    if (
-      data.value[i] == "mortar" || data.value[i] == "superjump" || data.value[i] == "empty" || data.value[i] == "punch" ||
-      data.value[i] == "walk" || data.value[i] == "bone" || data.value[i] == "dig" || data.value[i] == "climb" ||
-      data.value[i] == ""
-    ) {
-      continue;
-    }
+    if (free.includes(data.value[i])) continue;
 
     if (!client.player.userWeaponsOwned[data.value[i]]) {
       log.warn({ weapon: data.value[i] }, "set_weapons_equipped: arma que no tiene");
