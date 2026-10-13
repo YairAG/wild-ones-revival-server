@@ -195,21 +195,15 @@ export function handleBuyAmmo(client: LobbyClient, data: Msg<"buy_ammo">, wol: W
 }
 
 export function handleSetWeaponsEquipped(client: LobbyClient, data: Msg<"set_weapons_equipped">, wol: WOL): void {
-  const free = freeWeapons(client.player, wol); // no hace falta tenerlas
-  let validSet = true;
-  for (let i = 0; i < data.value.length; i++) {
-    if (free.includes(data.value[i])) continue;
+  // Se guardan las que puede usar: gratis o compradas (aunque ya no les quede munición). Las demás se quitan; antes
+  // una sola hacía rechazar toda la lista y en la partida salían las armas de antes
+  const free = freeWeapons(wol);
+  const owned = client.player.userWeaponsOwned;
+  const equipped = data.value.filter((weapon) => free.includes(weapon) || owned[weapon] != null);
+  const rejected = data.value.filter((weapon) => !equipped.includes(weapon));
+  if (rejected.length) log.warn({ weapons: rejected }, "set_weapons_equipped: arma que no tiene");
 
-    if (!client.player.userWeaponsOwned[data.value[i]]) {
-      log.warn({ weapon: data.value[i] }, "set_weapons_equipped: arma que no tiene");
-      validSet = false;
-      break;
-    }
-  }
-
-  if (!validSet) return;
-
-  client.player.userWeaponsEquipped = data.value;
+  client.player.userWeaponsEquipped = equipped;
   client.sendUpdate();
   client.updatePlayerData();
 }

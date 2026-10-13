@@ -170,7 +170,7 @@ export function handleProjectile(client: GameClient, data: Msg<"projectile">, wo
   // revisar: el servidor no sabe qué salió de cada caja. Si no la tiene, el disparo no se reenvía
   const owned = client.player.userWeaponsOwned;
   const canUse =
-    data.crate == "true" || freeWeapons(client.player, wol).includes(data.ammo_type) || owned[data.ammo_type] > 0;
+    data.crate == "true" || freeWeapons(wol).includes(data.ammo_type) || owned[data.ammo_type] > 0;
   if (!canUse) {
     log.warn({ id: client.player.id, weapon: data.ammo_type }, "projectile: arma que no tiene");
     return;

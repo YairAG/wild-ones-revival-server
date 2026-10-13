@@ -105,10 +105,14 @@ function suite(transport: Transport) {
     const r = await caro.request({ command: "set_weapons_equipped", value: ["walk", "grenade", "goo"] });
     assert.deepEqual(last(r).userWeaponsEquipped, ["walk", "grenade", "goo"]);
 
-    // Con un arma que no tiene no cambia nada (antes además lanzaba ReferenceError y se perdía el resto del
-    // paquete TCP; ahora el ping de request() sí llega)
-    assert.deepEqual(await caro.request({ command: "set_weapons_equipped", value: ["nuke"] }), []);
-    assert.ok(env.logs().some((l) => l.msg === "set_weapons_equipped: arma que no tiene" && l.weapon === "nuke"));
+    // Un arma que no tiene se quita y el resto se guarda (antes se rechazaba la lista entera y en la partida
+    // salían las de antes). Los poderes de mascota son gratis aunque no tenga esa mascota: el SWF los manda
+    // como armas por defecto y solo muestra el de la mascota actual
+    const r2 = await caro.request({ command: "set_weapons_equipped", value: ["walk", "scratch", "grenade", "nuke"] });
+    assert.deepEqual(last(r2).userWeaponsEquipped, ["walk", "scratch", "grenade"]);
+    assert.ok(
+      env.logs().some((l) => l.msg === "set_weapons_equipped: arma que no tiene" && l.weapons?.includes("nuke")),
+    );
   });
 
   test("chance_wheel cobra 2 treats y da un arma", async () => {
