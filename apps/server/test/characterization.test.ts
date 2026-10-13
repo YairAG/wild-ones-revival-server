@@ -237,6 +237,11 @@ function suite(transport: Transport) {
     });
 
     await t.test("disparar acorta el turno y pasa al siguiente jugador", async () => {
+      // un arma que no tiene (granada, sin munición): no se reenvía
+      gameA.send({ command: "projectile", d: [10, 20], ammo_type: "grenade", crate: "false" });
+      await sleep(200);
+      assert.ok(!gameB.messages.some((m) => m.command === "projectile"));
+
       gameA.send({ command: "projectile", d: [10, 20], ammo_type: "mortar", crate: "false" });
 
       const shot = await gameB.next("projectile");

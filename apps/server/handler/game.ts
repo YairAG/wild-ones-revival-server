@@ -5,6 +5,7 @@ import type GameClient = require("../client/client.game.js");
 import type WOL = require("../wol");
 import type { GameMessage } from "wildones-protocol";
 import log = require("../helpers/log.js");
+import freeWeapons = require("../helpers/free-weapons.js");
 
 type Msg<C> = Extract<GameMessage, { command: C }>;
 
@@ -164,7 +165,16 @@ export function handleProjectile(client: GameClient, data: Msg<"projectile">, wo
 
   if (!properties) return;
 
-  // (en el original hay una validación comentada de si el jugador tiene el arma)
+  // ¿Tiene el arma? Gratis (nivel 0 o el poder de su mascota) o con munición. Las de cajas (crate) no se pueden
+  // revisar: el servidor no sabe qué salió de cada caja. Si no la tiene, el disparo no se reenvía
+  const owned = client.player.userWeaponsOwned;
+  const canUse =
+    data.crate == "true" || freeWeapons(client.player, wol).includes(data.ammo_type) || owned[data.ammo_type] > 0;
+  if (!canUse) {
+    log.warn({ id: client.player.id, weapon: data.ammo_type }, "projectile: arma que no tiene");
+    return;
+  }
+
   if (properties.timeAfter == null) {
     //harmful
     client.avatar.alreadyShot = true;
@@ -181,7 +191,6 @@ export function handleProjectile(client: GameClient, data: Msg<"projectile">, wo
   }
 
   // Las gratis (mortar, poderes de mascota) no están en userWeaponsOwned: no gastan munición
-  const owned = client.player.userWeaponsOwned;
   if (data.crate != "true" && owned[data.ammo_type] != null) owned[data.ammo_type] -= 1;
 
   client.updatePlayerData();

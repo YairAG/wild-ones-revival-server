@@ -3,6 +3,7 @@ import type LobbyClient = require("../client/client.lobby.js");
 import type WOL = require("../wol");
 import type { LobbyMessage } from "wildones-protocol";
 import log = require("../helpers/log.js");
+import freeWeapons = require("../helpers/free-weapons.js");
 
 type Msg<C> = Extract<LobbyMessage, { command: C }>;
 
@@ -193,16 +194,8 @@ export function handleBuyAmmo(client: LobbyClient, data: Msg<"buy_ammo">, wol: W
   }
 }
 
-// Armas gratis (no hace falta tenerlas): las de Levels.dat nivel 0 y el poder de cada mascota del jugador
-function freeWeapons(client: LobbyClient, wol: WOL): string[] {
-  const levels = wol.levelsObj as { weapon?: string[] }[];
-  const pets = Object.values(client.player.ownedPets) as { type: string }[];
-  const powers = pets.map((pet) => wol.petsObj[pet.type]?.petPower);
-  return ["empty", "", ...(levels[0]?.weapon ?? []), ...powers];
-}
-
 export function handleSetWeaponsEquipped(client: LobbyClient, data: Msg<"set_weapons_equipped">, wol: WOL): void {
-  const free = freeWeapons(client, wol);
+  const free = freeWeapons(client.player, wol); // no hace falta tenerlas
   let validSet = true;
   for (let i = 0; i < data.value.length; i++) {
     if (free.includes(data.value[i])) continue;
