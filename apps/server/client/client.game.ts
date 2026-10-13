@@ -24,7 +24,8 @@ class GameClient {
   declare loggedIn: boolean;
   declare player: Player;
   declare avatar: Avatar;
-  declare lastMessageTime: number;
+  declare lastMessageTime: number; // cualquier mensaje de la partida
+  declare lastChatTime: number; // último mensaje de chat (límite de 1 por segundo)
   declare shotThisTurn: boolean;
   declare startingXP: number;
   declare startingGold: number;
@@ -67,6 +68,7 @@ class GameClient {
 
     /* Trackers */
     this.lastMessageTime = 0;
+    this.lastChatTime = 0;
     this.shotThisTurn = false;
 
     /* Rewards */

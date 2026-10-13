@@ -17,10 +17,29 @@ function canAct(client: GameClient): boolean {
   return isCurrentPlayer(client) && !client.avatar.locked;
 }
 
+// Chat de la partida. Se reenvían solo los campos que usa el cliente (los pone Controls.finishCommand); el id y
+// el nombre salen del servidor (nadie puede hablar por otro). Máximo 200 caracteres y 1 mensaje por segundo
+const CHAT_MAX_LENGTH = 200;
+const CHAT_INTERVAL_MS = 1000;
+
 export function handleChat(client: GameClient, data: Msg<"chat">): void {
-  //anti-spam protection
-  client.getGame().sendPacketE(data, client);
-  client.lastMessageTime = Date.now();
+  const raw = data as Record<string, unknown>;
+  if (typeof raw.text !== "string" || !raw.text.trim()) return;
+  if (Date.now() - client.lastChatTime < CHAT_INTERVAL_MS) return;
+  client.lastChatTime = Date.now();
+
+  client.getGame().sendPacketE(
+    {
+      command: "chat",
+      text: raw.text.slice(0, CHAT_MAX_LENGTH),
+      id: client.player.id,
+      dname: client.player.dname,
+      ordered: raw.ordered,
+      date: raw.date,
+      tick: raw.tick,
+    },
+    client,
+  );
 }
 
 export function handleOnReady(client: GameClient): void {

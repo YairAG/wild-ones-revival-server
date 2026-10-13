@@ -18,9 +18,11 @@ cada uno se corrige después en su propio commit.
   simule (ver [SIMULACION.md](SIMULACION.md)).
 - ~~Muerte contada dos veces~~ (arreglado): reportar dos veces la misma muerte la contaba dos veces y, con 3+
   jugadores, terminaba la partida con jugadores vivos.
-- **`packet.hasOwnProperty(...)` en `slot.sendPacket/sendPacketE`**: un mensaje reenviado con un campo
-  llamado `hasOwnProperty` hace fallar el reenvío (se pierde para todos).
-- **`chat` sin filtro**: se reenvía el objeto tal cual, con cualquier campo que mande el cliente.
+- ~~**`packet.hasOwnProperty(...)` en `slot.sendPacket/sendPacketE`**~~ (arreglado, `Object.hasOwn`): un mensaje
+  reenviado con un campo llamado `hasOwnProperty` hacía fallar el reenvío (se perdía para todos).
+- ~~**`chat` sin filtro**~~ (arreglado): se reenviaba el objeto tal cual, con cualquier campo, y se podía hablar
+  con el `id`/`dname` de otro. Ahora el servidor arma el mensaje (texto de hasta 200 caracteres, 1 por segundo).
+  Sigue sin filtro de groserías (el del chat global está en wildones-accounts).
 - ~~**`gkey` débil**~~ (arreglado): era `Math.random().toString(36).substring(7)` (~5-6 caracteres); ahora es
   `crypto.randomUUID()`, y es de un solo uso: se borra (de forma atómica) al entrar a la partida.
 - **`updatePlayerData` guarda el objeto `player` entero** en Mongo, incluidos `command` y `online`, y el

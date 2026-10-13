@@ -350,8 +350,7 @@ class Slot {
       const client = this.clients[key];
 
       if (client) {
-        // eslint-disable-next-line no-prototype-builtins -- se mantiene el original (ver docs/BUGS.md)
-        if (packet.hasOwnProperty("session")) (packet as Packet).session = client.gameSession;
+        if (Object.hasOwn(packet, "session")) (packet as Packet).session = client.gameSession;
         client.sendPacket(packet);
       }
     }
@@ -363,8 +362,7 @@ class Slot {
       const client = this.clients[key];
 
       if (client && client != clientExcl) {
-        // eslint-disable-next-line no-prototype-builtins -- se mantiene el original (ver docs/BUGS.md)
-        if (packet.hasOwnProperty("session")) (packet as Packet).session = client.gameSession;
+        if (Object.hasOwn(packet, "session")) (packet as Packet).session = client.gameSession;
         client.sendPacket(packet);
       }
     }
