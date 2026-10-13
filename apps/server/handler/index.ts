@@ -132,16 +132,15 @@ class Handler {
       if (stateObject.tempBufferLen <= stateObject.tempBuffer.length) {
         stateObject.awaitingData = false;
 
-        if (stateObject.connectionType == "game") {
-          log.debug({ data: stateObject.tempBuffer }, "Mensaje reensamblado");
-          this.handleGameCommand(stateObject as GameClient, JSON.parse(stateObject.tempBuffer.substr(0, stateObject.tempBufferLen)));
-          if (stateObject.tempBuffer.length > stateObject.tempBufferLen) {
-            this.handleJSON(stateObject, stateObject.tempBuffer.substr(stateObject.tempBufferLen)); //what if this is incomplete??
-          }
-        }
+        // Mensaje completo (en cualquier tipo de conexión; antes solo en game) y lo que llegó detrás
+        const buffer = stateObject.tempBuffer;
+        const bufferLen = stateObject.tempBufferLen;
         stateObject.tempBuffer = "";
         stateObject.tempBufferLen = 0;
         stateObject.dataParts = 0;
+        log.debug({ data: buffer }, "Mensaje reensamblado");
+        this.dispatch(stateObject, buffer.substr(0, bufferLen));
+        if (buffer.length > bufferLen) this.handleJSON(stateObject, buffer.substr(bufferLen));
         return;
       } else return; //await for some more data
     }
@@ -159,18 +158,24 @@ class Handler {
       return;
     }
 
-    if (stateObject.connectionType == "lobby") {
-      this.handleLobbyCommand(stateObject as LobbyClient, JSON.parse(content.substr(0, len)));
-    } else if (stateObject.connectionType == "ladder") {
-      this.handleLadderCommand(stateObject as LadderClient, JSON.parse(content.substr(0, len)));
-    } else if (stateObject.connectionType == "game") {
-      this.handleGameCommand(stateObject as GameClient, JSON.parse(content.substr(0, len)));
-    } else if (stateObject.connectionType == "social") {
-      this.handleSocialCommand(stateObject as SocialClient, JSON.parse(content.substr(0, len)));
-    }
+    this.dispatch(stateObject, content.substr(0, len));
 
     if (content.length > len) {
       this.handleJSON(stateObject, content.substr(len));
+    }
+  }
+
+  // Manda un mensaje al handler de su tipo de conexión. Si lanza una excepción solo se pierde ese mensaje (antes
+  // se perdía también lo que venía detrás en el mismo paquete TCP)
+  dispatch(client: AnyClient, json: string): void {
+    try {
+      const packet = JSON.parse(json);
+      if (client.connectionType == "lobby") this.handleLobbyCommand(client as LobbyClient, packet);
+      else if (client.connectionType == "ladder") this.handleLadderCommand(client as LadderClient, packet);
+      else if (client.connectionType == "game") this.handleGameCommand(client as GameClient, packet);
+      else if (client.connectionType == "social") this.handleSocialCommand(client as SocialClient, packet);
+    } catch (e) {
+      log.error({ err: e, connectionType: client.connectionType }, "Excepción al procesar un mensaje");
     }
   }
 

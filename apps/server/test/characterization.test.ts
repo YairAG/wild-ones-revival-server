@@ -292,6 +292,17 @@ function suite(transport: Transport) {
       await waitForUser("Ana", (u) => u.presence === "offline");
     });
   });
+
+  test("un mensaje partido en dos paquetes TCP también se rearma en el lobby", { skip: transport !== "tcp" }, async () => {
+    const lobby = await connect("/ballistic/lobby?session=x");
+    const ping = '{"command":"ping"}';
+    const frame = String(ping.length).padStart(6, "0") + ping;
+    lobby.write(frame.slice(0, 10));
+    await sleep(100);
+    lobby.write(frame.slice(10) + frame); // el resto, y otro ping pegado detrás
+    await lobby.next("ping_ack");
+    await lobby.next("ping_ack");
+  });
 }
 
 for (const transport of TRANSPORTS) describe(transport, () => suite(transport));

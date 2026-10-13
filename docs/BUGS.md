@@ -85,9 +85,9 @@ cada uno se corrige después en su propio commit.
 
 ## Protocolo / transporte
 
-- Mensajes partidos en varios paquetes TCP solo se reensamblan en conexiones `game`; en `lobby`/`ladder` se pierden.
-- Si un comando lanza una excepción, se descarta todo lo que quedaba en ese paquete TCP (otros mensajes que
-  llegaron pegados se pierden sin aviso).
+- ~~Mensajes partidos en varios paquetes TCP solo se reensamblaban en conexiones `game`~~ (arreglado: en todas).
+- ~~Si un comando lanzaba una excepción, se descartaba todo lo que quedaba en ese paquete TCP~~ (arreglado: solo se
+  pierde ese mensaje, ver `dispatch` en handler/index.ts).
 - La longitud del mensaje se cuenta en caracteres JS, no en bytes (posible problema con ñ/tildes).
 
 ## Código muerto
