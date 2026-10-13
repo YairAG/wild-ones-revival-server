@@ -111,6 +111,9 @@ function suite(transport: Transport) {
 
       // Presencia: en el lobby
       await waitForUser("Ana", (u) => u.presence === "lobby");
+
+      // El nivel se guarda calculado desde la XP (Ana tiene 0 XP: nivel 1 con la tabla de test)
+      await waitForUser("Ana", (u) => u.level === 1);
     });
 
     await t.test("ping en lobby", async () => {

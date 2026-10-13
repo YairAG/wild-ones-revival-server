@@ -6,6 +6,7 @@ import type WOL = require("../wol");
 import type { Player } from "wildones-protocol";
 import type { GameSocket, UserDoc } from "../types";
 import log = require("../helpers/log.js");
+import levelFromXp = require("../helpers/level.js");
 
 class LobbyClient {
   declare sock: GameSocket;
@@ -71,7 +72,9 @@ class LobbyClient {
 
     this.player.id = doc.id;
     this.player.nw = doc.nw;
-    this.player.level = doc.level;
+    // El nivel sale de la XP; se guarda para que lo vean otros (p. ej. la lista de amigos)
+    this.player.level = levelFromXp(this.WOL.levelsObj as { xp: number }[], doc.xp);
+    this.db.update({ id: doc.id }, { level: this.player.level });
     this.player.currentPet = doc.currentPet;
     this.player.login_streak = doc.login_streak;
     this.player.playerStatus = doc.playerStatus;

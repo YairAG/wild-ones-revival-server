@@ -6,6 +6,7 @@ import type WOL = require("../wol");
 import type { Player } from "wildones-protocol";
 import type { GameSocket, UserDoc } from "../types";
 import log = require("../helpers/log.js");
+import levelFromXp = require("../helpers/level.js");
 
 class GameClient {
   declare sock: GameSocket;
@@ -146,6 +147,7 @@ class GameClient {
 
   addXP(amount: number): void {
     this.player.xp += amount;
+    this.player.level = levelFromXp(this.WOL.levelsObj as { xp: number }[], this.player.xp);
 
     this.sendUpdate();
     this.updatePlayerData();
