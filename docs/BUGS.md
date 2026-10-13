@@ -49,6 +49,8 @@ cada uno se corrige después en su propio commit.
   empatados. (El original probablemente hacía "muerte súbita" con agua subiendo: `disaster: flood` en los
   mapas. Queda para cuando exista `packages/sim`.)
 - Premios de fin de partida solo con más de 2 jugadores; `game_stats` siempre va en 0.
+- **`level` nunca cambia**: el cliente calcula el nivel a partir de `xp` y `Levels.dat`, pero el servidor nunca
+  guarda ese nivel en Mongo, así que `level` se queda en 0 (lo que lee, p. ej., la lista de amigos).
 - ~~`wins`, `losses` y `gamecount` nunca cambiaban~~ (arreglado): al terminar la partida todos suman una
   partida, gana el único vivo y pierden los muertos. Si se acaba el tiempo con varios vivos, esos empatan.
 - `sendTick` reenvía el último `synch_check` del jugador activo pero sobrescribe `tick` con el tick del servidor.
