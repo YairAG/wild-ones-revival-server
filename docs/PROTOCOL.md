@@ -235,13 +235,18 @@ No la usa el SWF: es la conexión del frontend (`POST /ballistic/social?x`), con
 Sirve para invitar amigos a una partida. Las amistades las guarda el backend de cuentas (colección
 `friendships`, ver [CUENTAS.md](CUENTAS.md)).
 
+Todos los mensajes del servidor por esta conexión llevan el formato de respuestas del backend de cuentas:
+`{"ok": true, "code": 200, "message": "..."}` además de sus datos, y los errores salen con `command: "error"`:
+`{"command":"error","ok":false,"code":409,"message":"Tu amigo no está en el lobby","error":"FRIEND_NOT_IN_LOBBY"}`.
+`message` es para mostrar; `error` es un id fijo (lista en `SocialErrorId`, `packages/protocol/src/server.ts`).
+
 | command | Dirección | Efecto |
 |---|---|---|
-| `logIn` `{token}` | C→S | Con un JWT válido responde `{"command":"social_ready"}`; si no, nada |
+| `logIn` `{token}` | C→S | Con un JWT válido responde `social_ready`; si no, `error` `SESSION_EXPIRED` |
 | `ping` | C→S | `ping_ack` |
 | `invite` `{to}` | C→S | Invita al amigo con id `to`. Quien invita tiene que estar en el lobby del juego o esperando en su sala privada; el invitado, en el lobby y con el frontend abierto. Al invitado le llega `{"command":"invite","from":{id,dname}}` y a quien invita `invite_sent` `{to}` |
 | `invite_answer` `{from, accept}` | C→S | Responde la invitación de `from` (caduca en 1 minuto). Si rechaza, a quien invitó le llega `invite_declined` `{by}`. Si acepta y quien invitó está en su sala privada, al invitado le llega `join` a esa sala (si no está llena); si no, se crea una sala privada de 2 y a los dos SWF les llega `join` por su conexión de lobby (como en `quick_play`). A quien invitó, `invite_accepted` `{by}` |
-| `invite_error` `{error}` | S→C | Mensaje para mostrar: no son amigos, no está en el lobby, la invitación caducó… |
+| `error` | S→C | Algo que mandaste no se pudo: `LOGIN_REQUIRED`, `NOT_FRIENDS`, `FRIEND_NOT_IN_LOBBY`, `INVITE_NOT_FOUND` (caducó o ya se respondió), `ROOM_FULL`… También `INVALID_DATA` si el mensaje no es válido |
 
 ---
 

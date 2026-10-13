@@ -247,7 +247,10 @@ class Handler {
   }
 
   handleSocialCommand(client: SocialClient, packet: Protocol.SocialMessage): void {
-    if (!isValid(Protocol.socialMessage, packet)) return;
+    // La conexión social es nuestra (no del SWF): a un mensaje inválido se le responde con el error
+    if (!isValid(Protocol.socialMessage, packet)) {
+      return client.sendPacket(social.failure(400, "INVALID_DATA", "Mensaje no válido"));
+    }
     switch (packet.command) {
       case "logIn":
         social.handleSocialLogin(client, packet);

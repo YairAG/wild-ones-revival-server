@@ -16,7 +16,12 @@ function suite(transport: Transport) {
   async function connectSocial(dname: string) {
     const c = await env.connect("/ballistic/social?x");
     c.send({ command: "logIn", token: env.token(USERS.find((u) => u.dname === dname)!.id) });
-    await c.next("social_ready");
+    assert.deepEqual(await c.next("social_ready"), {
+      command: "social_ready",
+      ok: true,
+      code: 200,
+      message: "Conectado",
+    });
     return c;
   }
 
@@ -32,31 +37,60 @@ function suite(transport: Transport) {
   });
   after(() => env?.stop());
 
-  test("con un token inválido no responde", async () => {
+  test("con un token inválido responde SESSION_EXPIRED; sin logIn, LOGIN_REQUIRED", async () => {
     const c = await env.connect("/ballistic/social?x");
+    c.send({ command: "invite", to: 2 });
+    assert.equal((await c.next("error")).error, "LOGIN_REQUIRED");
     c.send({ command: "logIn", token: "no-es-un-jwt" });
-    await assert.rejects(c.next("social_ready", 500));
+    assert.deepEqual(await c.next("error"), {
+      command: "error",
+      ok: false,
+      code: 401,
+      message: "Tu sesión expiró, vuelve a entrar",
+      error: "SESSION_EXPIRED",
+    });
+  });
+
+  test("un mensaje inválido responde INVALID_DATA", async () => {
+    social.Ana.send({ command: "invite", to: "Beto" });
+    const res = await social.Ana.next("error");
+    assert.equal(res.code, 400);
+    assert.equal(res.error, "INVALID_DATA");
   });
 
   test("solo se invita a amigos que estén en el lobby", async () => {
     social.Ana.send({ command: "invite", to: 3 });
-    assert.equal((await social.Ana.next("invite_error")).error, "Solo puedes invitar a tus amigos");
+    assert.deepEqual(await social.Ana.next("error"), {
+      command: "error",
+      ok: false,
+      code: 403,
+      message: "Solo puedes invitar a tus amigos",
+      error: "NOT_FRIENDS",
+    });
 
     social.Ana.send({ command: "invite", to: 4 }); // Dani no tiene el lobby abierto
-    assert.equal((await social.Ana.next("invite_error")).error, "Tu amigo no está en el lobby");
+    assert.equal((await social.Ana.next("error")).error, "FRIEND_NOT_IN_LOBBY");
   });
 
   test("invitar y rechazar", async () => {
     social.Ana.send({ command: "invite", to: 2 });
-    assert.deepEqual((await social.Beto.next("invite")).from, { id: 1, dname: "Ana" });
-    assert.deepEqual((await social.Ana.next("invite_sent")).to, { id: 2, dname: "Beto" });
+    const invite = await social.Beto.next("invite");
+    assert.deepEqual(invite.from, { id: 1, dname: "Ana" });
+    assert.equal(invite.message, "Ana te invitó a una partida");
+    const sent = await social.Ana.next("invite_sent");
+    assert.deepEqual(sent.to, { id: 2, dname: "Beto" });
+    assert.equal(sent.message, "Invitación enviada a Beto");
 
     social.Beto.send({ command: "invite_answer", from: 1, accept: false });
-    assert.deepEqual((await social.Ana.next("invite_declined")).by, { id: 2, dname: "Beto" });
+    const declined = await social.Ana.next("invite_declined");
+    assert.deepEqual(declined.by, { id: 2, dname: "Beto" });
+    assert.equal(declined.message, "Beto no puede jugar ahora");
 
     // Ya respondida: no se puede volver a usar
     social.Beto.send({ command: "invite_answer", from: 1, accept: true });
-    assert.equal((await social.Beto.next("invite_error")).error, "La invitación ya no es válida");
+    const expired = await social.Beto.next("error");
+    assert.equal(expired.error, "INVITE_NOT_FOUND");
+    assert.equal(expired.message, "La invitación ya no es válida");
   });
 
   test("al aceptar, a los dos SWF les llega join a la misma sala privada", async () => {
@@ -69,7 +103,9 @@ function suite(transport: Transport) {
     assert.equal(joinAna.id, joinBeto.id);
     assert.match(joinAna.id, /^invitacion-1-2-\d+$/);
     assert.notEqual(joinAna.session, joinBeto.session); // cada uno con su pase
-    assert.deepEqual((await social.Ana.next("invite_accepted")).by, { id: 2, dname: "Beto" });
+    const accepted = await social.Ana.next("invite_accepted");
+    assert.deepEqual(accepted.by, { id: 2, dname: "Beto" });
+    assert.equal(accepted.message, "Beto aceptó: entrando a la sala");
   });
 
   test("si quien invita está esperando en su sala privada, el invitado entra a esa sala", async () => {

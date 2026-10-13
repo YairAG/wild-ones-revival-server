@@ -114,14 +114,35 @@ export interface PlayerRef {
   dname: string;
 }
 
+/**
+ * Identificadores de error de la conexión social. Fijos: el frontend los usa para decidir qué hacer; el texto
+ * para el jugador va en `message`. El código (como HTTP) va al lado
+ */
+export type SocialErrorId =
+  | "INVALID_DATA" // 400: comando o datos no válidos
+  | "SESSION_EXPIRED" // 401: token inválido o vencido
+  | "LOGIN_REQUIRED" // 401: invitar antes de logIn
+  | "NOT_FRIENDS" // 403
+  | "PLAYER_NOT_FOUND" // 404
+  | "INVITE_NOT_FOUND" // 404: no existe o ya caducó
+  | "NOT_IN_LOBBY" // 409: tú no estás en el lobby (o en tu sala privada, al invitar)
+  | "FRIEND_NOT_IN_LOBBY" // 409
+  | "GAME_STARTED" // 409
+  | "ROOM_FULL" // 409
+  | "SERVER_ERROR"; // 500
+
+/** Lo que se agrega a cada mensaje del servidor: el mismo formato que el backend de cuentas */
+export type SocialSuccess = { ok: true; code: number; message: string };
+export type SocialFailure = { ok: false; code: number; message: string; error: SocialErrorId };
+
 /** Mensajes de la conexión social (frontend web): invitaciones a partida */
 export type SocialServerMessage =
-  | { command: "social_ready" } // login correcto
-  | { command: "invite"; from: PlayerRef } // te invitaron
-  | { command: "invite_sent"; to: PlayerRef } // tu invitación llegó
-  | { command: "invite_accepted"; by: PlayerRef } // aceptaron tu invitación: los dos van a la sala
-  | { command: "invite_declined"; by: PlayerRef }
-  | { command: "invite_error"; error: string }; // mensaje para mostrar
+  | ({ command: "social_ready" } & SocialSuccess) // login correcto
+  | ({ command: "invite"; from: PlayerRef } & SocialSuccess) // te invitaron
+  | ({ command: "invite_sent"; to: PlayerRef } & SocialSuccess) // tu invitación llegó
+  | ({ command: "invite_accepted"; by: PlayerRef } & SocialSuccess) // aceptaron tu invitación: van a la sala
+  | ({ command: "invite_declined"; by: PlayerRef } & SocialSuccess)
+  | ({ command: "error" } & SocialFailure); // algo que mandaste no se pudo (login, invitar, responder)
 
 export type ServerMessage =
   | Player
