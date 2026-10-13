@@ -14,7 +14,7 @@ type Message = { command: string; [key: string]: any };
 class TestClient {
   port: number;
   path: string;
-  buffer = "";
+  buffer = Buffer.alloc(0); // en bytes, como el SWF
   messages: Message[] = []; // mensajes recibidos y aún no consumidos con next()
   sawHeader = false;
   socket!: net.Socket;
@@ -39,7 +39,7 @@ class TestClient {
         resolve();
       });
       this.socket.on("error", reject);
-      this.socket.on("data", (data) => this.onData(data.toString()));
+      this.socket.on("data", (data) => this.onData(Buffer.from(data)));
     });
   }
 
@@ -54,7 +54,7 @@ class TestClient {
       this.ws.on("error", reject);
       this.ws.on("message", (data, isBinary) => {
         this.receivedBinary = isBinary;
-        this.onData(data.toString());
+        this.onData(Buffer.from(data as Buffer));
       });
     });
   }
@@ -66,21 +66,21 @@ class TestClient {
 
   send(message: object): void {
     const json = JSON.stringify(message);
-    this.write(String(json.length).padStart(6, "0") + json);
+    this.write(String(Buffer.byteLength(json)).padStart(6, "0") + json); // longitud en bytes, como el SWF
   }
 
-  onData(text: string): void {
-    if (text.startsWith(HEADER)) {
+  onData(data: Buffer): void {
+    if (data.toString().startsWith(HEADER)) {
       this.sawHeader = true;
-      text = text.slice(HEADER.length);
+      data = data.subarray(Buffer.byteLength(HEADER));
     }
-    this.buffer += text;
-    // Saca todos los mensajes completos: 6 dígitos de longitud + JSON
+    this.buffer = Buffer.concat([this.buffer, data]);
+    // Saca todos los mensajes completos: 6 dígitos de longitud (en bytes) + JSON
     while (this.buffer.length >= 6) {
-      const len = Number(this.buffer.slice(0, 6));
+      const len = Number(this.buffer.subarray(0, 6).toString());
       if (this.buffer.length < 6 + len) break;
-      this.messages.push(JSON.parse(this.buffer.slice(6, 6 + len)));
-      this.buffer = this.buffer.slice(6 + len);
+      this.messages.push(JSON.parse(this.buffer.subarray(6, 6 + len).toString()));
+      this.buffer = this.buffer.subarray(6 + len);
     }
   }
 

@@ -29,26 +29,15 @@ function isValid(schema: Schema, packet: unknown): boolean {
   return result.success;
 }
 
+// Un mensaje a medias no puede pasar de esto (el más grande, synchronization, mide unos pocos KB)
+const MAX_PENDING_BYTES = 256 * 1024;
+
 class Handler {
   declare WOL: WOL;
 
   constructor(wol: WOL) {
     log.debug("Handler creado");
     this.WOL = wol;
-  }
-
-  //### Utils ###
-
-  extractLen(data: string): number {
-    let lenStr = data.substr(0, 6);
-    let len = 0;
-
-    while (lenStr != "") {
-      len = len * 10 + parseInt(lenStr.substr(0, 1));
-      lenStr = lenStr.substr(1, lenStr.length - 1);
-    }
-
-    return len;
   }
 
   //### Packet processing ###
@@ -68,7 +57,8 @@ class Handler {
   handleJSON(client: AnyClient, data: Buffer | string): void {
     log.debug({ connectionType: client.connectionType, data: String(data) }, "Datos recibidos");
     if (!data) return;
-    data = data.toString();
+    let raw = Buffer.from(data); // en bytes: una ñ partida entre dos paquetes no se rompe al convertir a texto
+    data = raw.toString();
 
     let stateObject = client;
 
@@ -108,61 +98,30 @@ class Handler {
         stateObject.WOL.addClient(stateObject);
       }
 
-      data = data.substr(data.indexOf("\r\n\r\n"));
-      data = data.substr(4);
+      raw = raw.subarray(raw.indexOf("\r\n\r\n") + 4); // sin la cabecera HTTP
     }
 
-    if (data == "" || stateObject.connectionType == "") return;
+    if (raw.length == 0 || stateObject.connectionType == "") return;
 
-    //in case data gets split!
-    if (stateObject.awaitingData) {
-      log.debug("Esperando el resto del mensaje");
-      stateObject.tempBuffer += data;
-      stateObject.dataParts++;
-      if (stateObject.dataParts > 8) {
-        //stop awaiting for data
-        log.warn({ data: stateObject.tempBuffer }, "Mensaje incompleto descartado");
-        stateObject.awaitingData = false;
-        stateObject.tempBuffer = "";
-        stateObject.tempBufferLen = 0;
-        stateObject.dataParts = 0;
-        return;
+    // Mensajes: 6 dígitos con la longitud EN BYTES (así la cuenta el SWF) + el JSON. Puede llegar más de uno junto
+    // o uno partido en varios paquetes: lo que sobra se guarda hasta que llegue el resto
+    let bytes = Buffer.concat([stateObject.pendingBytes, raw]);
+    while (bytes.length >= 6) {
+      const len = Number(bytes.subarray(0, 6).toString());
+      if (!Number.isInteger(len)) {
+        log.warn({ data: bytes.toString() }, "Mensaje sin longitud válida descartado");
+        bytes = Buffer.alloc(0);
+        break;
       }
-
-      if (stateObject.tempBufferLen <= stateObject.tempBuffer.length) {
-        stateObject.awaitingData = false;
-
-        // Mensaje completo (en cualquier tipo de conexión; antes solo en game) y lo que llegó detrás
-        const buffer = stateObject.tempBuffer;
-        const bufferLen = stateObject.tempBufferLen;
-        stateObject.tempBuffer = "";
-        stateObject.tempBufferLen = 0;
-        stateObject.dataParts = 0;
-        log.debug({ data: buffer }, "Mensaje reensamblado");
-        this.dispatch(stateObject, buffer.substr(0, bufferLen));
-        if (buffer.length > bufferLen) this.handleJSON(stateObject, buffer.substr(bufferLen));
-        return;
-      } else return; //await for some more data
+      if (bytes.length < 6 + len) break; // falta el resto
+      this.dispatch(stateObject, bytes.subarray(6, 6 + len).toString());
+      bytes = bytes.subarray(6 + len);
     }
-
-    //end case
-    const len = this.extractLen(data);
-    const content = data.substr(6);
-
-    if (content.length < len) {
-      //I need more data
-      stateObject.tempBuffer += content;
-      stateObject.tempBufferLen = len;
-      stateObject.awaitingData = true;
-      stateObject.dataParts++;
-      return;
+    if (bytes.length > MAX_PENDING_BYTES) {
+      log.warn({ bytes: bytes.length }, "Mensaje incompleto demasiado grande, descartado");
+      bytes = Buffer.alloc(0);
     }
-
-    this.dispatch(stateObject, content.substr(0, len));
-
-    if (content.length > len) {
-      this.handleJSON(stateObject, content.substr(len));
-    }
+    stateObject.pendingBytes = bytes;
   }
 
   // Manda un mensaje al handler de su tipo de conexión. Si lanza una excepción solo se pierde ese mensaje (antes

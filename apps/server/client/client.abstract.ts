@@ -14,10 +14,7 @@ class Client {
   declare WOL: WOL;
   declare connectionType: string;
   declare initialized: boolean;
-  declare tempBuffer: string;
-  declare tempBufferLen: number;
-  declare awaitingData: boolean;
-  declare dataParts: number;
+  declare pendingBytes: Buffer; // un mensaje que llegó a medias (ver handler/index.ts handleJSON)
   declare loggedIn: boolean | string;
   declare newObject: object;
   declare id: string;
@@ -35,10 +32,7 @@ class Client {
     this.initialized = false;
 
     /* Buffers and settings */
-    this.tempBuffer = "";
-    this.tempBufferLen = 0;
-    this.awaitingData = false;
-    this.dataParts = 0;
+    this.pendingBytes = Buffer.alloc(0);
 
     /* */
     this.loggedIn = "im_abstract";

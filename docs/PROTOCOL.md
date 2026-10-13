@@ -81,10 +81,11 @@ Cada mensaje = **6 dígitos con la longitud** + **JSON**:
 000018{"command":"ping"}
 ```
 
-- La longitud se cuenta en caracteres de JavaScript (`string.length`), no en bytes.
+- La longitud va **en bytes** (UTF-8), como la cuenta el SWF (`writeUTFBytes` / `readUTFBytes`): `ñ` cuenta 2.
 - Puede haber varios mensajes seguidos en un mismo paquete.
-- Si un mensaje llega partido en varios paquetes, solo se reensambla en conexiones `game` (máx. 8 trozos).
-- JSON inválido: se loguea la excepción y se descarta el resto del paquete.
+- Si un mensaje llega partido en varios paquetes, se guarda hasta que llegue el resto (en todas las conexiones;
+  máximo 256 KB pendientes).
+- JSON inválido o un comando que lanza una excepción: se loguea y se descarta solo ese mensaje.
 - Cada mensaje se **valida** contra el esquema de su tipo de conexión (`packages/protocol/src/client.ts`).
   Si no cumple (campo con tipo incorrecto, falta un campo obligatorio, `command` desconocido o de otra
   conexión), se loguea `!! Mensaje inválido descartado: ...` y se ignora. Los campos extra se permiten y se

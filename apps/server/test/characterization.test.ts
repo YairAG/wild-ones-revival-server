@@ -192,8 +192,9 @@ function suite(transport: Transport) {
     await t.test("chat, set_aim, on_ready y synchronization", async () => {
       // chat: se reenvía a los demás aunque no sea su turno, solo con los campos del cliente; id y nombre los
       // pone el servidor (aunque mande otros)
-      gameB.send({ command: "chat", text: "hola", extra: 1, id: 1, dname: "Ana", tick: 5 });
-      assert.deepEqual(await gameA.next("chat"), { command: "chat", text: "hola", id: 2, dname: "Beto", tick: 5 });
+      // con ñ y signos: la longitud va en bytes (así la cuenta el SWF), no en caracteres
+      gameB.send({ command: "chat", text: "¡Hola, ñandú!", extra: 1, id: 1, dname: "Ana", tick: 5 });
+      assert.deepEqual(await gameA.next("chat"), { command: "chat", text: "¡Hola, ñandú!", id: 2, dname: "Beto", tick: 5 });
       gameB.send({ command: "chat", text: "otra" }); // menos de 1 s después: se ignora
       await sleep(200);
       assert.ok(!gameA.messages.some((m) => m.command === "chat" && m.text === "otra"));

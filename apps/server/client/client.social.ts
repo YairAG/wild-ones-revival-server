@@ -13,10 +13,7 @@ class SocialClient {
   declare WOL: WOL;
   declare connectionType: string;
   declare initialized: boolean;
-  declare tempBuffer: string;
-  declare tempBufferLen: number;
-  declare awaitingData: boolean;
-  declare dataParts: number;
+  declare pendingBytes: Buffer; // un mensaje que llegó a medias (ver handler/index.ts handleJSON)
   declare id: string;
   declare player: PlayerRef | null; // null hasta que hace logIn
 
@@ -27,17 +24,14 @@ class SocialClient {
     this.WOL = clientRef.WOL;
     this.connectionType = clientRef.connectionType;
     this.initialized = false;
-    this.tempBuffer = "";
-    this.tempBufferLen = 0;
-    this.awaitingData = false;
-    this.dataParts = 0;
+    this.pendingBytes = Buffer.alloc(0);
     this.id = clientRef.id;
     this.player = null;
   }
 
   sendPacket(packet: SocialServerMessage | { command: "ping_ack" }): void {
     const str = JSON.stringify(packet);
-    const len = ("000000" + str.length).slice(-6);
+    const len = ("000000" + Buffer.byteLength(str)).slice(-6); // en bytes, como el SWF
     // El primer mensaje lleva la misma pseudo-cabecera que las otras conexiones
     const header = this.initialized ? "" : "Originality is undetected plagiarism.\r\n\r\n";
     this.initialized = true;

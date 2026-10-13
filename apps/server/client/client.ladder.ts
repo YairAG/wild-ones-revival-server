@@ -13,10 +13,7 @@ class LadderClient {
   declare newPacketHeader: string;
   declare connectionType: string;
   declare initialized: boolean;
-  declare tempBuffer: string;
-  declare tempBufferLen: number;
-  declare awaitingData: boolean;
-  declare dataParts: number;
+  declare pendingBytes: Buffer; // un mensaje que llegó a medias (ver handler/index.ts handleJSON)
   declare id: string;
   declare player: Player;
 
@@ -37,10 +34,7 @@ class LadderClient {
     this.initialized = false;
 
     /* Buffers and settings */
-    this.tempBuffer = "";
-    this.tempBufferLen = 0;
-    this.awaitingData = false;
-    this.dataParts = 0;
+    this.pendingBytes = Buffer.alloc(0);
 
     /* Client data */
     this.id = clientRef.id;
@@ -88,7 +82,7 @@ class LadderClient {
   // ### socket helpers ###
   sendPacket(packet: object): void {
     let str = JSON.stringify(packet);
-    const len = ("000000" + str.length).slice(-6);
+    const len = ("000000" + Buffer.byteLength(str)).slice(-6); // en bytes, como el SWF
     log.debug({ packet: str }, "Envío al ladder");
 
     if (!this.initialized) {

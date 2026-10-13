@@ -32,7 +32,8 @@ function onMessage(msg: ServerMessage) {
 | `ServerMessage` | Todo lo que el servidor puede enviar |
 | `Player`, `Pet`, `GameState`, `GameRecord`, `StartGame`, `GameStats`, `GameStatus` | Objetos que se repiten en los mensajes del servidor |
 
-Los mensajes viajan como 6 dígitos de longitud + JSON (`000018{"command":"ping"}`), por WebSocket o TCP.
+Los mensajes viajan como 6 dígitos de longitud **en bytes** (UTF-8) + JSON (`000018{"command":"ping"}`), por
+WebSocket o TCP.
 Este paquete solo describe el JSON; el formato de transporte está en `PROTOCOL.md`.
 
 Licencia MIT.

@@ -16,10 +16,7 @@ class GameClient {
   declare connectionType: string;
   declare initialized: boolean;
   declare mapLoaded: boolean;
-  declare tempBuffer: string;
-  declare tempBufferLen: number;
-  declare awaitingData: boolean;
-  declare dataParts: number;
+  declare pendingBytes: Buffer; // un mensaje que llegó a medias (ver handler/index.ts handleJSON)
   declare id: string;
   declare loggedIn: boolean;
   declare player: Player;
@@ -51,10 +48,7 @@ class GameClient {
     this.mapLoaded = false; //reset this
 
     /* Buffers and settings */
-    this.tempBuffer = "";
-    this.tempBufferLen = 0;
-    this.awaitingData = false;
-    this.dataParts = 0;
+    this.pendingBytes = Buffer.alloc(0);
 
     /* Client data */
     this.id = clientRef.id;
@@ -288,7 +282,7 @@ class GameClient {
   // Formato: 6 dígitos de longitud + JSON. El primer mensaje lleva además la pseudo-cabecera
   sendPacket(packet: object): void {
     let str = JSON.stringify(packet);
-    const len = ("000000" + str.length).slice(-6);
+    const len = ("000000" + Buffer.byteLength(str)).slice(-6); // en bytes, como el SWF
 
     if (!this.initialized) {
       this.initialized = true;
