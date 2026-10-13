@@ -64,14 +64,15 @@ cada uno se corrige después en su propio commit.
   ganar XP, y se guarda.
 - ~~`wins`, `losses` y `gamecount` nunca cambiaban~~ (arreglado): al terminar la partida todos suman una
   partida, gana el único vivo y pierden los muertos. Si se acaba el tiempo con varios vivos, esos empatan.
-- `sendTick` reenvía el último `synch_check` del jugador activo pero sobrescribe `tick` con el tick del servidor.
-  Probable causa del desync: el cliente es lockstep y quien no está en turno solo avanza hasta el `tick` del
+- ~~`sendTick` reenviaba el último `synch_check` del jugador activo pero sobrescribía `tick` con el tick del
+  servidor~~ (arreglado: se reenvía en cuanto llega, con su tick; falta confirmarlo jugando). Probable causa del
+  desync: el cliente es lockstep y quien no está en turno solo avanza hasta el `tick` del
   último comando recibido (`TimeLoop.canTick`); `synch_check` no está en `ignoreCommandTick`, así que es su
   reloj. Con el tick del servidor (que puede ir adelantado al del jugador), los demás simulan por delante y los
   movimientos y disparos que llegan con un tick ya pasado se ejecutan tarde (`addCommand`: `commandTick <
   currentTick` → se procesa en ese momento). Además se reenvía cada 50 ticks del servidor, no cuando llega.
-- `slot/index.ts` `update`: compara con `new Date().now` (siempre `undefined`), así que el aviso "haven't received
-  tick" nunca se dispara.
+- ~~`slot/index.ts` `update`: comparaba con `new Date().now` (siempre `undefined`)~~ (quitado: solo era un log de
+  depuración, y con `Date.now()` se habría escrito cada 10 ms).
 - `handlePlayerKill` y `handleRequestSynch` existen pero no están enrutados (y `handleRequestSynch` llama a
   `getSynchCommand`, que no existe).
 - ~~`game_name_check` no convertía espacios en guiones como `create_game`~~ (arreglado): "Sala 1" aparecía libre

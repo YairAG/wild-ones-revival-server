@@ -48,8 +48,6 @@ class Slot {
   declare field: Field;
   declare commands: unknown[];
   declare physicsObjects: Physical[];
-  declare lastSynchCheck: Packet;
-  declare lastSynchTick: unknown; // lo asigna handler (synch_check); no se lee
   declare completedTurns: number;
   declare synchCmd: unknown;
   declare startingTimeout: ReturnType<typeof setTimeout> | null;
@@ -97,7 +95,6 @@ class Slot {
     this.commands = [];
     this.physicsObjects = [];
 
-    this.lastSynchCheck = { command: "synch_check", synchCheck: "" };
 
     this.completedTurns = 0;
 
@@ -124,12 +121,6 @@ class Slot {
 
       if (this.tick % 50 == 0) {
         log.debug({ tick: this.tick }, "Tick");
-        this.sendTick();
-      }
-
-      // @ts-expect-error bug: Date no tiene .now, así que esta condición nunca se cumple (ver docs/BUGS.md)
-      if (parseInt(this.lastSynchCheck.date) + 20 < new Date().now) {
-        log.debug("Sin synch_check reciente");
       }
 
       //step avatar
@@ -446,15 +437,6 @@ class Slot {
       const c = this.clients[key];
       this.sendPlayerPosition(c);
     }
-  }
-
-  // Reenvía el último synch_check del jugador en turno a los demás, con el tick del servidor
-  sendTick(): void {
-    const cmd = this.lastSynchCheck;
-    cmd["command"] = "synch_check";
-    cmd["id"] = "oppenheimer";
-    cmd["tick"] = this.tick;
-    this.sendPacketE(cmd, this.clients[this.currentPlayer]);
   }
 
   sendServerTick(): void {

@@ -293,8 +293,8 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 
 - El reloj (`tick`) avanza **+10 cada 100 ms** → 1 unidad = 10 ms.
 - Duración de turno = `turnDuration` + 2 s el primero, + 1 s los siguientes.
-- Cada 500 ms (`tick % 50 == 0`), a los demás: el último `synch_check` del jugador en turno, con
-  `id:"oppenheimer"` y `tick` sobrescrito por el del server.
+- El `synch_check` del jugador en turno se reenvía a los demás en cuanto llega, con su `tick` (el cliente es
+  lockstep: es el reloj de los que no están en turno; ver BUGS.md).
 - Al vencer el turno:
   1. Se calcula el fin del nuevo turno y el siguiente jugador pasa a ser `currentPlayer`.
   2. Al jugador **entrante**: `{"command":"set_tick","id":-1,"value":<tick>,"turnEndTick":<tick>,"tick":0}`.
@@ -313,7 +313,7 @@ Si alguien sale durante `starting`, vuelve a `idle`.
 | `on_ready` | — | no | `player.status = "ready"`; a todos: `game` |
 | `not_ready` | — | — | `player.status = "waiting"`. En una sala privada en `starting`, la cuenta atrás se detiene |
 | `map_loaded` | — | — | Se ignora |
-| `synch_check` | `{"tick":..,"synchCheck":".."}` | sí (sin lock) | Lo guarda para el reenvío periódico (5.3) |
+| `synch_check` | `{"tick":..,"synchCheck":".."}` | sí (sin lock) | Se reenvía tal cual a los demás (5.3) |
 | `move_left` / `move_right` / `move_stop` | `{"d":[x,y]}` | sí | Guarda posición; reenvía a los demás |
 | `move_jump` | `{"d":[x,y],"direction":"up"}` | sí | Guarda posición; reenvía a los demás |
 | `set_aim` | `{"value":"<ángulo>","power":"<n>"}` (el SWF los manda como texto; también se aceptan números) | sí | Reenvía a los demás |
@@ -390,7 +390,7 @@ Si se fue el jugador en turno, pasa el turno al siguiente.
 | `game` | game | Cambios de jugadores o estado |
 | `game_join_confirmed` | game | Justo antes de `startGame` |
 | `startGame` | game | Inicio de partida |
-| `synch_check` | game | Cada 500 ms a los que no están en turno |
+| `synch_check` | game | El del jugador en turno, reenviado a los demás |
 | `set_tick` | game | Al jugador que empieza su turno |
 | `changeTurn` | game | Cambio de turno |
 | `set_synch` | game | Respuesta a `synchronization` |

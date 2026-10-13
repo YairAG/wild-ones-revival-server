@@ -55,10 +55,12 @@ export function handleNotReady(client: GameClient): void {
   if (game.isPrivate && game.isStarting()) game.stopGameStart();
 }
 
+// El jugador en turno lo manda cada 50 ticks con un hash de su física. Se reenvía en cuanto llega y con SU tick:
+// el cliente es lockstep y quien no está en turno solo avanza hasta el tick del último comando recibido, así que
+// esto es su reloj (antes se reenviaba cada 50 ticks del servidor con el tick del servidor; ver docs/BUGS.md)
 export function handleSynchCheck(client: GameClient, data: Msg<"synch_check">): void {
   if (client.getGame().currentPlayer != client.player.id) return;
-  client.getGame().lastSynchCheck = data;
-  client.getGame().lastSynchTick = data.tick;
+  client.getGame().sendPacketE(data, client);
 }
 
 export function handleMoveLeft(client: GameClient, data: Msg<"move_left">): void {

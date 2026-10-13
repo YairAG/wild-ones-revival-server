@@ -198,6 +198,15 @@ function suite(transport: Transport) {
       await sleep(200);
       assert.ok(!gameA.messages.some((m) => m.command === "chat" && m.text === "otra"));
 
+      // synch_check del jugador en turno (Ana): se reenvía en cuanto llega y con SU tick (es el reloj de los
+      // demás). El de quien no está en turno se ignora
+      gameA.send({ command: "synch_check", synchCheck: "abc", tick: 123 });
+      const check = await gameB.next("synch_check", 1000);
+      assert.deepEqual([check.synchCheck, check.tick], ["abc", 123]);
+      gameB.send({ command: "synch_check", synchCheck: "xyz", tick: 124 });
+      await sleep(200);
+      assert.ok(!gameA.messages.some((m) => m.command === "synch_check"));
+
       // set_aim: solo del jugador en turno, reenviado a los demás
       gameA.send({ command: "set_aim", value: 1.2, power: 300 });
       assert.deepEqual(await gameB.next("set_aim"), { command: "set_aim", value: 1.2, power: 300 });
